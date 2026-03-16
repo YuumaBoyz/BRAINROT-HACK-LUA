@@ -1,67 +1,58 @@
--- [[ 🌐 UNIVERSAL HUB v6.8 - HYBRID LOADER ]] --
-print("🚀 ***Initialisation forcée...*** 🚀")
+-- [[ 🌐 UNIVERSAL HUB v6.8 - LOADER FINAL ]] --
+print("🚀 ***Initialisation forcée...***")
 
--- Fonction pour récupérer le code (Local ou Web)
-local function GetModule(fileName, url)
-    -- 1. Tentative de lecture locale (Prioritaire)
-    local success, content = pcall(function() return readfile(fileName) end)
-    
-    if success and content then
-        print("📂 ***Chargement local :*** " .. fileName)
-    else
-        -- 2. Secours sur GitHub si le fichier local manque
-        print("🌐 ***Téléchargement depuis GitHub :*** " .. fileName)
-        success, content = pcall(function() return game:HttpGet(url) end)
-    end
-
-    if success and content then
-        local func, err = loadstring(content)
-        if func then
-            return func()
-        else
-            warn("❌ ***Erreur de syntaxe dans " .. fileName .. " :*** " .. tostring(err))
-        end
-    else
-        warn("⚠️ ***Impossible de charger " .. fileName .. " (Vérifie ta connexion ou tes fichiers).***")
-    end
-    return nil
+local function GetCode(url)
+    local s, res = pcall(function() return game:HttpGet(url) end)
+    return s and res or nil
 end
 
-local function SafeLoad()
-    local baseUrl = "https://raw.githubusercontent.com/YuumaBoyz/BRAINROT-HACK-LUA/main/"
+local baseUrl = "https://raw.githubusercontent.com/YuumaBoyz/BRAINROT-HACK-LUA/main/"
 
-    -- 🛡️ Chargement sécurisé des modules
-    local Lib = GetModule("functionsmodule.lua", baseUrl .. "FunctionsModule.lua")
-    print("✅ ***Logic OK***")
+-- 1. Téléchargement des modules
+local libCode = GetCode(baseUrl .. "FunctionsModule.lua")
+local uiCode = GetCode(baseUrl .. "Interface.lua")
+local mainCode = GetCode(baseUrl .. "Main.lua")
 
-    local UI = GetModule("interface.lua", baseUrl .. "Interface.lua")
-    print("✅ ***UI OK***")
-
-    local Main = GetModule("main.lua", baseUrl .. "Main.lua")
-
-    -- 🚀 Lancement de l'interface
-    if Lib and UI then
-        local Success, Error = pcall(function()
-            UI.Init(Lib)
-        end)
-        
-        if Success then
-            print("✅ ***Hub chargé avec succès !*** 🥳")
-        else
-            warn("❌ ***Erreur d'exécution de l'UI :*** " .. tostring(Error))
-        end
-    else
-        warn("⚠️ ***Chargement avorté : Lib ou UI est Nil.***")
-    end
-
-    -- ⚙️ Lancement du Main (Optionnel/Silencieux)
-    if Main and Lib then
-        pcall(function()
-            Main.Start(Lib)
-            print("✅ ***Main OK***")
-        end)
-    end
+if not libCode or not uiCode then
+    warn("❌ ***Erreur critique : Impossible de télécharger les fichiers depuis GitHub !***")
+    return
 end
 
-SafeLoad()
-print("🔥 ***HUB TOTALEMENT OPÉRATIONNEL !*** 🔥")
+-- 2. Chargement sécurisé de la LIB
+local Lib = loadstring(libCode)()
+if type(Lib) ~= "table" then
+    warn("❌ ***FunctionsModule n'a pas renvoyé une table valide !***")
+    return
+end
+print("✅ ***Logic OK***")
+
+-- 3. Chargement sécurisé de l'UI
+local UI = loadstring(uiCode)()
+if type(UI) ~= "table" or not UI.Init then
+    warn("❌ ***Interface n'a pas renvoyé une table avec UI.Init !***")
+    return
+end
+print("✅ ***UI OK***")
+
+-- 4. Lancement de l'interface
+task.spawn(function()
+    local success, err = pcall(function()
+        UI.Init(Lib)
+    end)
+    if success then
+        print("🔥 ***HUB CHARGÉ AVEC SUCCÈS !***")
+    else
+        warn("❌ ***Erreur au lancement de l'UI :*** " .. tostring(err))
+    end
+end)
+
+-- 5. Lancement du Main (Persistance)
+if mainCode then
+    task.spawn(function()
+        local Main = loadstring(mainCode)()
+        if Main and Main.Start then
+            pcall(function() Main.Start(Lib) end)
+            print("🛡️ ***Système Main activé***")
+        end
+    end)
+end
