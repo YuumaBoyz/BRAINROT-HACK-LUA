@@ -1,9 +1,10 @@
 local Functions = {}
 
 -- [[ ⚙️ CONFIGURATION & VARIABLES ]] --
-Functions.FlySpeed = 50
+Functions.FlySpeed = 60
 Functions.WalkSpeed = 16
 Functions.JumpPower = 50
+Functions.TPSpeed = 150 -- Vitesse du TP (plus c'est bas, plus c'est discret)
 Functions.Flying = false
 Functions.Noclip = false
 Functions.InfJump = false
@@ -93,13 +94,33 @@ function Functions.SetTPPoint()
 end
 
 function Functions.GoToTPPoint()
-    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        if Functions.SavedPosition then
-            LP.Character.HumanoidRootPart.CFrame = Functions.SavedPosition
-            print("🚀 Téléportation effectuée !")
-        else
-            warn("❌ Aucun point enregistré !")
-        end
+    local Char = LP.Character
+    if Char and Char:FindFirstChild("HumanoidRootPart") and Functions.SavedPosition then
+        local Root = Char.HumanoidRootPart
+        local targetCFrame = Functions.SavedPosition
+        
+        -- On calcule la distance
+        local distance = (Root.Position - targetCFrame.Position).Magnitude
+        
+        -- Si on est à plus de 500 studs, on fait un petit saut intermédiaire pour éviter les bugs
+        task.spawn(function()
+            print("🚀 Déplacement Stealth en cours...")
+            local tweenService = game:GetService("TweenService")
+            local info = TweenInfo.new(distance / Functions.TPSpeed, Enum.EasingStyle.Linear)
+            local tween = tweenService:Create(Root, info, {CFrame = targetCFrame})
+            
+            -- On active le Noclip pendant le TP pour ne pas rester bloqué dans un mur
+            local oldNoclip = Functions.Noclip
+            Functions.ToggleNoclip(true)
+            
+            tween:Play()
+            tween.Completed:Wait()
+            
+            Functions.ToggleNoclip(oldNoclip)
+            print("✅ Arrivé à destination !")
+        end)
+    else
+        warn("❌ Aucun point enregistré ou personnage introuvable !")
     end
 end
 
@@ -193,6 +214,100 @@ function Functions.ChangeSize(modifier)
             v.Value = modifier
         end
     end
+end
+
+-- [[ 👁️ MM2 : ROLE ESP ]] --
+function Functions.ToggleRoleESP(state)
+    Functions.RoleESP = state
+    
+    task.spawn(function()
+        while Functions.RoleESP do
+            for _, v in pairs(game.Players:GetPlayers()) do
+                if v ~= LP and v.Character then
+                    -- On cherche ou on crée le Highlight
+                    local highlight = v.Character:FindFirstChild("RoleHighlight") or Instance.new("Highlight")
+                    highlight.Name = "RoleHighlight"
+                    highlight.Parent = v.Character
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineTransparency = 0
+                    
+                    -- Détection du rôle par l'inventaire
+                    local character = v.Character
+                    local backpack = v.Backpack
+                    
+                    if backpack:FindFirstChild("Knife") or character:FindFirstChild("Knife") then
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- 🔪 Meurtrier (Rouge)
+                        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+                    elseif backpack:FindFirstChild("Gun") or character:FindFirstChild("Gun") then
+                        highlight.FillColor = Color3.fromRGB(0, 0, 255) -- 🔫 Sheriff (Bleu)
+                        highlight.OutlineColor = Color3.fromRGB(0, 0, 255)
+                    else
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- 🟢 Innocent (Vert)
+                        highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+                    end
+                end
+            end
+            task.wait(1) -- Rafraîchissement toutes les secondes
+        end
+        
+        -- Nettoyage si on désactive
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild("RoleHighlight") then
+                v.Character.RoleHighlight:Destroy()
+            end
+        end
+    end)
+end
+
+-- [[ 🎯 MM2 : SILENT AIM ]] --
+function Functions.GetSilentTarget()
+    local target = nil
+    local shortestDist = math.huge
+    
+    -- Vérifie si on est Sheriff ou Meurtrier
+    local isMurderer = LP.Backpack:FindFirstChild("Knife") or LP.Character:FindFirstChild("Knife")
+    
+    for _, v in pairs(game.Players:GetPlayers()) do
+        if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            -- Logique Sheriff : Cible seulement le Murderer
+            if not isMurderer then
+                if v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife") then
+                    return v.Character.HumanoidRootPart -- Cible prioritaire immédiate !
+                end
+            else
+                -- Logique Murderer : Cible le plus proche
+                local dist = (v.Character.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                if dist < shortestDist then
+                    shortestDist = dist
+                    target = v.Character.HumanoidRootPart
+                end
+            end
+        end
+    end
+    return target
+end
+
+-- Hook pour rediriger l'attaque
+function Functions.ToggleSilentAim(state)
+    Functions.SilentAim = state
+    local Mouse = LP:GetMouse()
+    
+    -- On remplace le comportement du clic
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local args = {...}
+        local method = getnamecallmethod()
+        
+        if Functions.SilentAim and method == "FireServer" and self.Name == "Throw" or self.Name == "Shoot" then
+            local target = Functions.GetSilentTarget()
+            if target then
+                -- On "triche" sur la position envoyée au serveur
+                args[1] = target.Position 
+                return oldNamecall(self, table.unpack(args))
+            end
+        end
+        return oldNamecall(self, ...)
+    end)
 end
 
 -- [[ 🛡️ SYSTÈME & EVENTS ]] --

@@ -3,7 +3,7 @@ local UI = {}
 function UI.Init(Lib)
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     local Window = Rayfield:CreateWindow({
-        Name = "🌐 UNIVERSAL HUB v6.6",
+        Name = "🌐 UNIVERSAL HUB v6.7",
         LoadingTitle = "Initialisation du Multi-Tool...",
         LoadingSubtitle = "par YuumaBoyz",
         ConfigurationSaving = {
@@ -15,7 +15,6 @@ function UI.Init(Lib)
 
     -- [[ 🏃 ONGLET MOUVEMENT ]] --
     local TabMove = Window:CreateTab("🏃 Mouvement")
-
     TabMove:CreateSection("Vitesse & Capacités")
 
     TabMove:CreateSlider({
@@ -44,7 +43,7 @@ function UI.Init(Lib)
         Callback = function(v) Lib.InfJump = v end,
     })
 
-    TabMove:CreateSection("Téléportation (Waypoints)")
+    TabMove:CreateSection("Téléportation (Waypoints Stealth)")
 
     TabMove:CreateButton({
         Name = "📍 Poser un Point de TP",
@@ -52,16 +51,46 @@ function UI.Init(Lib)
     })
 
     TabMove:CreateButton({
-        Name = "🌀 Se téléporter au Point",
+        Name = "🌀 Se téléporter au Point (Indétectable)",
         Callback = function() Lib.GoToTPPoint() end,
+    })
+
+    -- [[ 🕵️ ONGLET MURDER MYSTERY 2 ]] --
+    local TabMM2 = Window:CreateTab("🕵️ Murder Mystery 2")
+    TabMM2:CreateSection("Avantages de Rôle")
+
+    TabMM2:CreateToggle({
+        Name = "Role ESP (Vision à travers murs)",
+        CurrentValue = false,
+        Callback = function(v) Lib.ToggleRoleESP(v) end,
+    })
+
+    TabMM2:CreateToggle({
+        Name = "Silent Aim (Shoot/Throw Bot)",
+        CurrentValue = false,
+        Callback = function(v) Lib.ToggleSilentAim(v) end,
+    })
+
+    TabMM2:CreateSection("Utilitaires")
+
+    TabMM2:CreateButton({
+        Name = "🔫 Auto-Grab Gun (TP au pistolet)",
+        Callback = function() 
+            local drop = workspace:FindFirstChild("GunDrop")
+            if drop and Lib.LP.Character then
+                Lib.LP.Character.HumanoidRootPart.CFrame = drop.CFrame
+            else
+                Rayfield:Notify({Title = "MM2", Content = "Le pistolet n'est pas au sol !", Duration = 2})
+            end
+        end,
     })
 
     -- [[ ⚔️ ONGLET BLADE BALL ]] --
     local TabBlade = Window:CreateTab("⚔️ Blade Ball")
-    TabBlade:CreateSection("Remote Sniper (Distance)")
+    TabBlade:CreateSection("Combat & Sniper")
 
     TabBlade:CreateKeybind({
-        Name = "Touche d'Interception",
+        Name = "Touche d'Interception (Parry)",
         CurrentKeybind = "F",
         HoldToInteract = false,
         Flag = "ParryKeybind",
@@ -70,22 +99,24 @@ function UI.Init(Lib)
         end,
     })
 
-    TabBlade:CreateParagraph({
-        Title = "🚀 Comment ça marche ?", 
-        Content = "Contrairement au parry normal, cette touche envoie directement l'ordre au serveur de renvoyer la balle. Tu peux le faire même si la balle est LOIN, tant qu'elle se dirige vers toi."
+    TabBlade:CreateToggle({
+        Name = "Auto-Spam Duel (Proximité)",
+        CurrentValue = false,
+        Callback = function(v) Lib.ToggleAutoSpam(v) end,
     })
 
-    TabBlade:CreateSection("Paramètres Avancés")
+    TabBlade:CreateParagraph({
+        Title = "🚀 Info Technique", 
+        Content = "Le Remote Sniper force le serveur à parer la balle, peu importe la distance, si elle est dirigée vers toi."
+    })
+
+    TabBlade:CreateSection("Debug")
 
     TabBlade:CreateButton({
-        Name = "Vérifier la Balle (Debug)",
+        Name = "🔍 Vérifier la Balle (Console)",
         Callback = function()
             local ball = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls")
-            if ball then
-                print("✅ Balle trouvée à la position : " .. tostring(ball.Position))
-            else
-                print("❌ Balle introuvable.")
-            end
+            if ball then print("✅ Balle détectée !") else print("❌ Balle introuvable.") end
         end,
     })
 
@@ -105,17 +136,11 @@ function UI.Init(Lib)
 
     -- [[ 🎭 ONGLET FUN & TAILLE ]] --
     local TabFun = Window:CreateTab("🎭 Fun & Taille")
-
-    TabFun:CreateSection("Manipulateur de Taille")
+    TabFun:CreateSection("Manipulateur de Corps")
 
     TabFun:CreateButton({
         Name = "Devenir GÉANT (x3)",
         Callback = function() Lib.ChangeSize(3) end,
-    })
-
-    TabFun:CreateButton({
-        Name = "Taille Normale (x1)",
-        Callback = function() Lib.ChangeSize(1) end,
     })
 
     TabFun:CreateButton({
@@ -124,7 +149,7 @@ function UI.Init(Lib)
     })
 
     TabFun:CreateSlider({
-        Name = "Taille Personnalisée",
+        Name = "Taille Précise",
         Range = {0.1, 10},
         Increment = 0.1,
         CurrentValue = 1,
@@ -147,16 +172,15 @@ function UI.Init(Lib)
 
     -- [[ 🔓 ONGLET UNLOCKS ]] --
     local TabUnlock = Window:CreateTab("🔓 Unlocks")
-
     TabUnlock:CreateSection("Bypass & Exploits")
 
     TabUnlock:CreateButton({
-        Name = "Supprimer Kill/VIP Parts (Bypass)",
+        Name = "🛡️ Supprimer Zones Kill/VIP",
         Callback = function() Lib.BypassTouch() end,
     })
 
     TabUnlock:CreateButton({
-        Name = "Tenter Give VIP Tools (Remotes)",
+        Name = "🎁 Tenter Give Items (Remotes)",
         Callback = function() Lib.GetRemoteTools() end,
     })
 
@@ -167,14 +191,14 @@ function UI.Init(Lib)
         end,
     })
 
-    -- [[ 🛡️ LOGIQUE DE PERSISTANCE (ANTI-RESET) ]] --
+    -- [[ 🛡️ LOGIQUE DE PERSISTANCE & ANTI-RESET ]] --
     local LP = game:GetService("Players").LocalPlayer
+    
     LP.CharacterAdded:Connect(function(Character)
         local Humanoid = Character:WaitForChild("Humanoid", 5)
         if Humanoid then
             task.wait(1)
             Lib.SetSpeed(Lib.WalkSpeed)
-            Lib.SetJump(Lib.JumpPower)
         end
     end)
 
@@ -183,7 +207,6 @@ function UI.Init(Lib)
             if LP.Character and LP.Character:FindFirstChild("Humanoid") then
                 local hum = LP.Character.Humanoid
                 if hum.WalkSpeed ~= Lib.WalkSpeed then hum.WalkSpeed = Lib.WalkSpeed end
-                if hum.JumpPower ~= Lib.JumpPower then hum.JumpPower = Lib.JumpPower end
             end
         end
     end)
