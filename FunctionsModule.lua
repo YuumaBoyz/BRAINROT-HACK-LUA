@@ -58,27 +58,37 @@ function Functions.SetJump(value)
     end
 end
 
--- [[ ⚔️ FONCTION NO COOLDOWN (Blade Ball) ]] --
+-- [[ ⚔️ SYSTÈME DE SCAN PRODIGIEUX (NO COOLDOWN) ]] --
 function Functions.ToggleNoCooldown(state)
     Functions.NoCooldown = state
     
     if state then
         task.spawn(function()
-            -- On cherche le script de capacité local du joueur
-            while Functions.NoCooldown do
-                pcall(function()
-                    local char = game:GetService("Players").LocalPlayer.Character
-                    if char then
-                        -- Recherche de variables de cooldown dans les scripts locaux
-                        for _, v in pairs(getgc(true)) do
-                            if type(v) == "table" and rawget(v, "Cooldown") then
-                                v.Cooldown = 0 -- On force le cooldown à zéro
-                            end
+            print("🔍 ***Lancement du scan profond des fichiers...***")
+            
+            -- On utilise getgc (Get Garbage Collector) pour fouiller la mémoire du jeu
+            for _, v in pairs(getgc(true)) do
+                if type(v) == "function" and islclosure(v) then
+                    local name = debug.getinfo(v).name
+                    local constants = debug.getconstants(v)
+                    
+                    -- On cherche des fonctions qui parlent de "Cooldown", "Ability", ou "Reset"
+                    if name and (name:lower():find("cooldown") or name:lower():find("ability")) then
+                        -- On remplace la fonction par une fonction vide qui retourne immédiatement
+                        hookfunction(v, function() return end)
+                    end
+                    
+                    -- Scan des constantes pour trouver les timers cachés
+                    for _, const in pairs(constants) do
+                        if const == "Cooldown" or const == "TickRate" then
+                            -- On force les variables locales du script à 0
+                            debug.setupvalue(v, "Cooldown", 0)
+                            debug.setupvalue(v, "CD", 0)
                         end
                     end
-                end)
-                task.wait(0.5)
+                end
             end
+            print("✅ ***Scan terminé : Cooldowns neutralisés !***")
         end)
     end
 end
