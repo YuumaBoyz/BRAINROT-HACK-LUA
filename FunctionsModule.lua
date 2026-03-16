@@ -93,6 +93,87 @@ function Functions.ToggleNoCooldown(state)
     end
 end
 
+function Functions.ToggleCurveSpike(state)
+    Functions.CurveSpike = state
+    
+    task.spawn(function()
+        while Functions.CurveSpike do
+            local ball = workspace:FindFirstChild("Ball") -- À vérifier selon le jeu
+            if ball and ball.AssemblyLinearVelocity.Magnitude > 30 then
+                -- On vérifie si c'est nous qui venons de frapper
+                local dist = (ball.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                if dist < 15 then
+                    task.wait(0.1) -- Laisse la balle partir un peu pour l'effet visuel
+                    
+                    -- Détection du contreur le plus proche
+                    for _, p in pairs(game.Players:GetPlayers()) do
+                        if p ~= LP and p.Team ~= LP.Team and p.Character then
+                            local opponentPos = p.Character.HumanoidRootPart.Position
+                            local ballDir = ball.AssemblyLinearVelocity.Unit
+                            local toOpponent = (opponentPos - ball.Position).Unit
+                            
+                            -- Si l'adversaire est sur le chemin (angle faible)
+                            if ballDir:Dot(toOpponent) > 0.8 then 
+                                -- On dévie la trajectoire sur le côté puis vers le bas
+                                local sideSteer = Vector3.new(-ballDir.Z, 0, ballDir.X) -- Perpendiculaire
+                                ball.AssemblyLinearVelocity = (ballDir + sideSteer * 0.5).Unit * ball.AssemblyLinearVelocity.Magnitude
+                                
+                                -- Force de chute pour toucher le sol vite
+                                local force = Instance.new("BodyForce", ball)
+                                force.Force = Vector3.new(0, -5000, 0)
+                                game.Debris:AddItem(force, 0.5)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
+end
+
+function Functions.ToggleSlowMo(state)
+    Functions.SlowMoActive = state
+    
+    RunService.RenderStepped:Connect(function()
+        if not Functions.SlowMoActive then return end
+        
+        local ball = workspace:FindFirstChild("Ball")
+        if ball and ball:IsA("BasePart") then
+            local dist = (ball.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+            
+            -- Si la balle est à moins de 20 mètres
+            if dist < 20 then
+                -- On ralentit localement le rendu de la position
+                local shadowBall = ball:FindFirstChild("SlowMoVisual") or Instance.new("Part")
+                if shadowBall.Name ~= "SlowMoVisual" then
+                    shadowBall.Name = "SlowMoVisual"
+                    shadowBall.Size = ball.Size
+                    shadowBall.Shape = ball.Shape
+                    shadowBall.Color = Color3.fromRGB(0, 255, 255)
+                    shadowBall.Material = Enum.Material.Neon
+                    shadowBall.Transparency = 0.6
+                    shadowBall.CanCollide = false
+                    shadowBall.Anchored = true
+                    shadowBall.Parent = workspace
+                end
+                
+                -- On crée une interpolation fluide et lente pour ton écran
+                local targetPos = ball.Position
+                shadowBall.CFrame = shadowBall.CFrame:Lerp(CFrame.new(targetPos), 0.15) -- 0.15 = ralentissement
+                
+                -- On rend la vraie balle invisible pour ne voir que la lente
+                ball.LocalTransparencyModifier = 1
+            else
+                local shadow = workspace:FindFirstChild("SlowMoVisual")
+                if shadow then shadow:Destroy() end
+                ball.LocalTransparencyModifier = 0
+            end
+        end
+    end)
+end
+
 function Functions.ToggleFly(state)
     Functions.Flying = state
     local char = LP.Character

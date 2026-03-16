@@ -5,7 +5,7 @@ function UI.Init(Lib)
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     
     local Window = Rayfield:CreateWindow({
-        Name = "🌐 UNIVERSAL HUB v7.0",
+        Name = "🌐 UNIVERSAL HUB v7.5",
         LoadingTitle = "Initialisation du Multi-Tool...",
         LoadingSubtitle = "par YuumaBoyz",
         ConfigurationSaving = {
@@ -29,7 +29,6 @@ function UI.Init(Lib)
         end,
     })
 
-    -- MODIFICATION : Range baissé à 10 pour plus de précision
     TabMove:CreateSlider({
         Name = "Puissance de saut",
         Range = {10, 500}, 
@@ -80,23 +79,36 @@ function UI.Init(Lib)
         end,
     })
 
-    -- [[ 🕵️ ONGLET MURDER MYSTERY 2 ]] --
-    local TabMM2 = Window:CreateTab("🕵️ MM2")
-    TabMM2:CreateSection("Avantages")
+    -- [[ 🏐 ONGLET VOLLEYBALL LEGEND ]] --
+    local TabVolley = Window:CreateTab("🏐 Volleyball", 4483362458)
+    
+    TabVolley:CreateSection("⚡ Capacités Prodigieuses")
 
-    TabMM2:CreateToggle({
-        Name = "Role ESP",
+    TabVolley:CreateToggle({
+        Name = "Magnet Curve Spike 🧲",
+        Info = "La balle dévie pour éviter les contres adverses.",
         CurrentValue = false,
-        Callback = function(v) 
-            if Lib and Lib.ToggleRoleESP then Lib.ToggleRoleESP(v) end
+        Callback = function(v)
+            if Lib and Lib.ToggleCurveSpike then Lib.ToggleCurveSpike(v) end
         end,
     })
 
-    TabMM2:CreateToggle({
-        Name = "Silent Aim",
+    TabVolley:CreateToggle({
+        Name = "Vision de l'Aigle (Slow-Mo) 🦅",
+        Info = "Ralentit la balle localement quand elle s'approche de toi.",
         CurrentValue = false,
-        Callback = function(v) 
-            if Lib then Lib.SilentAim = v end
+        Callback = function(v)
+            if Lib and Lib.ToggleSlowMo then Lib.ToggleSlowMo(v) end
+        end,
+    })
+
+    TabVolley:CreateSection("💪 Physique & Endurance")
+
+    TabVolley:CreateToggle({
+        Name = "Endurance Infinie ⚡",
+        CurrentValue = false,
+        Callback = function(v)
+            if Lib and Lib.ToggleStamina then Lib.ToggleStamina(v) end
         end,
     })
 
@@ -111,9 +123,7 @@ function UI.Init(Lib)
         HoldToInteract = false,
         Flag = "ParryKeybind",
         Callback = function(Keybind)
-            if Lib then 
-                Lib.ParryKey = Keybind 
-            end
+            if Lib then Lib.ParryKey = Keybind end
         end,
     })
 
@@ -127,14 +137,11 @@ function UI.Init(Lib)
 
     TabBlade:CreateSection("⚡ Capacités Spéciales")
 
-    -- NOUVELLE FONCTIONNALITÉ : No Cooldown
     TabBlade:CreateToggle({
-        Name = "No Cooldown (BETA) ⚡",
+        Name = "No Cooldown (SCAN PRO) ⚡",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib and Lib.ToggleNoCooldown then 
-                Lib.ToggleNoCooldown(v) 
-            end 
+            if Lib and Lib.ToggleNoCooldown then Lib.ToggleNoCooldown(v) end 
         end,
     })
 
@@ -158,6 +165,26 @@ function UI.Init(Lib)
         end,
     })
 
+    -- [[ 🕵️ MM2 ]] --
+    local TabMM2 = Window:CreateTab("🕵️ MM2")
+    TabMM2:CreateSection("Avantages")
+
+    TabMM2:CreateToggle({
+        Name = "Role ESP",
+        CurrentValue = false,
+        Callback = function(v) 
+            if Lib and Lib.ToggleRoleESP then Lib.ToggleRoleESP(v) end
+        end,
+    })
+
+    TabMM2:CreateToggle({
+        Name = "Silent Aim",
+        CurrentValue = false,
+        Callback = function(v) 
+            if Lib then Lib.SilentAim = v end
+        end,
+    })
+
     -- [[ 🔓 ONGLET UNLOCKS ]] --
     local TabUnlock = Window:CreateTab("🔓 Unlocks")
     TabUnlock:CreateButton({
@@ -169,7 +196,7 @@ function UI.Init(Lib)
 
     Rayfield:Notify({
         Title = "SYSTÈME CHARGÉ",
-        Content = "Hub v7.0 prêt à l'emploi !",
+        Content = "Hub v7.5 - Mode Haikyuu & Blade Master Activé !",
         Duration = 3,
         Image = 4483362458,
     })
