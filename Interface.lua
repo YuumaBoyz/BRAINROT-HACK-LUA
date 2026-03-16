@@ -134,6 +134,27 @@ function UI.Init(Lib)
         end,
     })
 
+    -- [[ 🛡️ LOGIQUE DE PERSISTANCE (ANTI-RESET) ]] --
+    local LP = game:GetService("Players").LocalPlayer
+    LP.CharacterAdded:Connect(function(Character)
+        local Humanoid = Character:WaitForChild("Humanoid", 5)
+        if Humanoid then
+            task.wait(1)
+            Lib.SetSpeed(Lib.WalkSpeed)
+            Lib.SetJump(Lib.JumpPower)
+        end
+    end)
+
+    task.spawn(function()
+        while task.wait(2) do
+            if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+                local hum = LP.Character.Humanoid
+                if hum.WalkSpeed ~= Lib.WalkSpeed then hum.WalkSpeed = Lib.WalkSpeed end
+                if hum.JumpPower ~= Lib.JumpPower then hum.JumpPower = Lib.JumpPower end
+            end
+        end
+    end)
+
     return Window
 end
 
