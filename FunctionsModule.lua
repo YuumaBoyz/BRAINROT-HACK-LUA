@@ -263,19 +263,20 @@ end
 function Functions.GetSilentTarget()
     local target = nil
     local shortestDist = math.huge
+    local LP = game:GetService("Players").LocalPlayer
     
-    -- Vérifie si on est Sheriff ou Meurtrier
-    local isMurderer = LP.Backpack:FindFirstChild("Knife") or LP.Character:FindFirstChild("Knife")
+    -- Vérifie si on est Murderer
+    local isMurderer = LP.Backpack:FindFirstChild("Knife") or (LP.Character and LP.Character:FindFirstChild("Knife"))
     
     for _, v in pairs(game.Players:GetPlayers()) do
         if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            -- Logique Sheriff : Cible seulement le Murderer
             if not isMurderer then
+                -- Si on est Sheriff/Hero : Cible uniquement le Murderer
                 if v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife") then
-                    return v.Character.HumanoidRootPart -- Cible prioritaire immédiate !
+                    return v.Character.HumanoidRootPart
                 end
             else
-                -- Logique Murderer : Cible le plus proche
+                -- Si on est Murderer : Cible le plus proche
                 local dist = (v.Character.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
                 if dist < shortestDist then
                     shortestDist = dist
@@ -290,24 +291,27 @@ end
 -- Hook pour rediriger l'attaque
 function Functions.ToggleSilentAim(state)
     Functions.SilentAim = state
-    local Mouse = LP:GetMouse()
+    print("🎯 Silent Aim : " .. (state and "ACTIVÉ" or "DÉSACTIVÉ"))
     
-    -- On remplace le comportement du clic
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local args = {...}
-        local method = getnamecallmethod()
-        
-        if Functions.SilentAim and method == "FireServer" and self.Name == "Throw" or self.Name == "Shoot" then
-            local target = Functions.GetSilentTarget()
-            if target then
-                -- On "triche" sur la position envoyée au serveur
-                args[1] = target.Position 
-                return oldNamecall(self, table.unpack(args))
+    if state then
+        -- Hook du Namecall pour rediriger les balles/couteaux
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+            local args = {...}
+            local method = getnamecallmethod()
+            
+            if Functions.SilentAim and method == "FireServer" then
+                if self.Name == "Shoot" or self.Name == "Throw" then
+                    local target = Functions.GetSilentTarget()
+                    if target then
+                        args[1] = target.Position -- On force la destination sur la cible
+                        return oldNamecall(self, table.unpack(args))
+                    end
+                end
             end
-        end
-        return oldNamecall(self, ...)
-    end)
+            return oldNamecall(self, ...)
+        end)
+    end
 end
 
 -- [[ 🛡️ SYSTÈME & EVENTS ]] --
