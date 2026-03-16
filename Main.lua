@@ -1,5 +1,5 @@
 -- [[ BRAINROT HUB - MAIN EXECUTION ]] --
--- Fusion totale : Sécurité, Modularité, Combat & Auto-Bypass
+-- Fusion totale : Sécurité accrue, Modularité & Auto-Bypass
 -- Auteur : Expert Scripting
 
 -- 1. Attendre le chargement complet du jeu
@@ -13,35 +13,50 @@ local URL_INTERFACE = "https://raw.githubusercontent.com/YuumaBoyz/BRAINROT-HACK
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- [[ CHARGEUR DE COMPOSANTS ]] --
+-- [[ 🛡️ CHARGEUR DE COMPOSANTS SÉCURISÉ ]] --
 local function SafeLoad(name, url)
-    local success, result = pcall(function()
-        return loadstring(game:HttpGet(url))()
-    end)
-    if success and result then
-        print("✅ [" .. name .. "] : Chargé avec succès.")
-        return result
+    local success, content = pcall(function() return game:HttpGet(url) end)
+    
+    if success and content then
+        local func, err = loadstring(content)
+        if func then
+            -- On exécute le script et on récupère ce qu'il renvoie
+            local result = func() 
+            
+            -- Vérification cruciale : Le script a-t-il renvoyé sa table (Functions ou UI) ?
+            if result ~= nil then
+                print("✅ [" .. name .. "] : Chargé avec succès.")
+                return result
+            else
+                -- Si result est nil, c'est qu'il manque le "return" à la fin du fichier sur GitHub
+                warn("⚠️ [" .. name .. "] : Le fichier est vide ou n'a rien retourné. Vérifie le 'return' à la fin du script sur GitHub !")
+                return nil
+            end
+        else
+            warn("❌ [" .. name .. "] : Erreur de syntaxe dans le code distant -> " .. tostring(err))
+        end
     else
-        warn("❌ [" .. name .. "] : Erreur de téléchargement -> " .. tostring(result))
-        return nil
+        warn("❌ [" .. name .. "] : Impossible de récupérer l'URL (Vérifie ton lien Raw GitHub).")
     end
+    return nil
 end
 
 print("⚡ Initialisation du Brainrot Hub...")
 
+-- [[ CHARGEMENT DES MODULES ]] --
 local Lib = SafeLoad("Logic", URL_FUNCTIONS)
 local UI = SafeLoad("UI", URL_INTERFACE)
 
+-- Arrêt immédiat si un composant manque pour éviter les erreurs "nil"
 if not Lib or not UI then
-    return warn("⛔ ÉCHEC CRITIQUE : Impossible de charger les composants distants.")
+    return warn("⛔ ÉCHEC CRITIQUE : Impossible de lancer le Hub sans tous les composants.")
 end
 
--- [[ 🛡️ ACTIVATION DES SYSTÈMES DE BASE ]] --
-Lib.EnableAntiAFK() -- Protection contre la déconnexion immédiate
-Lib.ResetPhysics()  -- Nettoyage initial de la physique
+-- [[ 🛠️ ACTIVATION DES SYSTÈMES DE BASE ]] --
+Lib.EnableAntiAFK() -- Protection contre la déconnexion
+Lib.ResetPhysics()  -- Nettoyage initial
 
 -- [[ 🖥️ INITIALISATION DE L'INTERFACE ]] --
--- On récupère les éléments de l'UI pour garder la compatibilité si besoin
 local Window, FlyToggle, StealToggle, KillToggle = UI.Init(Lib) 
 
 -- [[ 🌪️ BOUCLE ASYNCHRONE : FLING AURA (COMBAT) ]] --
@@ -50,8 +65,8 @@ task.spawn(function()
         if Lib.KillAura then
             local Target = Lib.GetClosestPlayer()
             if Target then
-                Lib.Fling(Target)   -- Exécution de la propulsion
-                Lib.ResetPhysics()  -- 🟢 BYPASS : Empêche le kick après le choc
+                Lib.Fling(Target)   -- Propulsion physique
+                Lib.ResetPhysics()  -- 🟢 BYPASS : Nettoie la vélocité
             end
         end
     end
@@ -67,7 +82,7 @@ task.spawn(function()
                 local HRP = Character.HumanoidRootPart
                 -- Téléportation flash
                 HRP.CFrame = Target.CFrame * CFrame.new(0, 2, 0)
-                Lib.ResetPhysics() -- 🟢 BYPASS : Stabilise le perso après le TP
+                Lib.ResetPhysics() -- 🟢 BYPASS
                 task.wait(0.15)
             end
         end
@@ -78,10 +93,10 @@ end)
 task.spawn(function()
     while task.wait(1.5) do
         if Lib.PermanentBarrier then
-            Lib.LockMyBarrier() -- Force la fermeture de ta barrière
+            Lib.LockMyBarrier() -- Force le verrouillage de la barrière
         end
     end
 end)
 
-print("🔥 BRAINROT HUB v3 : TOUT EST OPÉRATIONNEL !")
+print("🔥 BRAINROT HUB v3.1 : TOUT EST OPÉRATIONNEL !")
 print("💡 Rappel : Utilise R-CTRL pour masquer l'interface.")
