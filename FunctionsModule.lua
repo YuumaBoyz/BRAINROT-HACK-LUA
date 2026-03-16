@@ -74,13 +74,26 @@ end)
 
 function Functions.ChangeSize(modifier)
     local Char = LP.Character
-    if Char and Char:FindFirstChild("Humanoid") then
-        local Hum = Char.Humanoid
-        local Scales = {"BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale"}
-        for _, scaleName in pairs(Scales) do
-            local sV = Hum:FindFirstChild(scaleName)
-            if sV then sV.Value = modifier end
+    local Hum = Char and Char:FindFirstChild("Humanoid")
+    if not Hum then return end
+
+    -- Liste des paramètres de taille R15
+    local Scales = {
+        "BodyHeightScale",
+        "BodyWidthScale",
+        "BodyDepthScale",
+        "HeadScale"
+    }
+
+    for _, scaleName in pairs(Scales) do
+        -- On cherche l'objet, s'il n'existe pas, on le crée !
+        local scaleValue = Hum:FindFirstChild(scaleName)
+        if not scaleValue then
+            scaleValue = Instance.new("NumberValue")
+            scaleValue.Name = scaleName
+            scaleValue.Parent = Hum
         end
+        scaleValue.Value = modifier
     end
 end
 
