@@ -1,5 +1,6 @@
 local Functions = {}
 
+-- [[ ⚙️ CONFIGURATION & VARIABLES ]] --
 Functions.FlySpeed = 50
 Functions.WalkSpeed = 16
 Functions.JumpPower = 50
@@ -7,10 +8,12 @@ Functions.Flying = false
 Functions.Noclip = false
 Functions.InfJump = false
 Functions.SavedPosition = nil
+Functions.LookAtEnabled = false
 
 local LP = game:GetService("Players").LocalPlayer
 local NoclipConnection = nil
 
+-- [[ 🏃 MOUVEMENT ]] --
 function Functions.SetSpeed(value)
     Functions.WalkSpeed = value
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
@@ -21,8 +24,9 @@ end
 function Functions.SetJump(value)
     Functions.JumpPower = value
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.JumpPower = value
-        LP.Character.Humanoid.UseJumpPower = true 
+        local Hum = LP.Character.Humanoid
+        Hum.JumpPower = value
+        Hum.UseJumpPower = true 
     end
 end
 
@@ -62,9 +66,7 @@ function Functions.ToggleNoclip(state)
             NoclipConnection = game:GetService("RunService").Stepped:Connect(function()
                 if Functions.Noclip and LP.Character then
                     for _, part in pairs(LP.Character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
+                        if part:IsA("BasePart") then part.CanCollide = false end
                     end
                 else
                     if NoclipConnection then
@@ -77,54 +79,22 @@ function Functions.ToggleNoclip(state)
     end
 end
 
-game:GetService("UserInputService").JumpRequest:Connect(function()
-    if Functions.InfJump and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
--- Supprimer les barrières de mort/kick (VIP Doors)
-function Functions.BypassTouch()
-    for _, v in pairs(workspace:GetDescendants()) do
-        -- On cherche les objets qui déclenchent un script au toucher
-        if v:IsA("TouchTransmitter") then
-            local parent = v.Parent
-            -- Si le nom contient VIP, Kill, Death ou Kick, on supprime le danger
-            if parent.Name:find("VIP") or parent.Name:find("Kill") or parent.Name:find("Death") then
-                v:Destroy() 
-            end
-        end
-    end
-    print("🛡️ TouchInterests dangereux supprimés !")
-end
-
--- Tenter de récupérer tous les objets via RemoteEvents
-function Functions.GetRemoteTools()
-    for _, v in pairs(game:GetDescendants()) do
-        -- On cherche les événements qui pourraient donner des items
-        if v:IsA("RemoteEvent") and (v.Name:find("Give") or v.Name:find("Tool") or v.Name:find("Item")) then
-            v:FireServer() -- On tente de déclencher l'événement
-        end
-    end
-    print("🎁 Tentative de récupération d'items envoyée !")
-end
-
+-- [[ 📍 TÉLÉPORTATION (WAYPOINTS) ]] --
 function Functions.SetTPPoint()
     local Char = LP.Character
     if Char and Char:FindFirstChild("HumanoidRootPart") then
         Functions.SavedPosition = Char.HumanoidRootPart.CFrame
-        print("📍 Position enregistrée avec succès !")
-        -- Petit feedback visuel (optionnel)
-        Rayfield:Notify({
+        print("📍 Position enregistrée !")
+        -- Notification visuelle
+        game:GetService("ReplicatedStorage").Rayfield.RayfieldNotify:Fire({
             Title = "Point de TP",
             Content = "Position actuelle sauvegardée !",
             Duration = 2,
-            Image = 4483362458,
+            Image = 4483362458
         })
     end
 end
 
--- Revenir au point enregistré
 function Functions.GoToTPPoint()
     local Char = LP.Character
     if Char and Char:FindFirstChild("HumanoidRootPart") then
@@ -132,41 +102,88 @@ function Functions.GoToTPPoint()
             Char.HumanoidRootPart.CFrame = Functions.SavedPosition
             print("🚀 Téléportation effectuée !")
         else
-            warn("❌ Aucun point de TP enregistré !")
+            warn("❌ Aucun point enregistré !")
         end
     end
+end
+
+-- [[ 🎭 SOCIAL & VISUEL ]] --
+function Functions.ToggleLookAt(state)
+    Functions.LookAtEnabled = state
+    task.spawn(function()
+        while Functions.LookAtEnabled do
+            local closest = nil
+            local dist = math.huge
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local d = (LP.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+                    if d < dist then dist = d closest = p end
+                end
+            end
+            if closest then
+                LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(closest.Character.HumanoidRootPart.Position.X, LP.Character.HumanoidRootPart.Position.Y, closest.Character.HumanoidRootPart.Position.Z))
+            end
+            task.wait()
+        end
+    end)
+end
+
+function Functions.ChatSpy()
+    print("💬 ChatSpy activé (Console F9)")
+    local ChatEvents = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents", 5)
+    if ChatEvents then
+        ChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
+            print("[" .. tostring(messageData.FromSpeaker) .. "]: " .. tostring(messageData.Message))
+        end)
+    end
+end
+
+-- [[ 🔓 UNLOCKS & TAILLE ]] --
+function Functions.BypassTouch()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("TouchTransmitter") then
+            local p = v.Parent.Name:lower()
+            if p:find("vip") or p:find("kill") or p:find("dead") or p:find("death") then 
+                v:Destroy() 
+            end
+        end
+    end
+    print("🛡️ Zones dangereuses/VIP bypassées !")
+end
+
+function Functions.GetRemoteTools()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("RemoteEvent") and (v.Name:find("Give") or v.Name:find("Tool") or v.Name:find("Item")) then 
+            v:FireServer() 
+        end
+    end
+    print("🎁 Tentative de Give envoyée !")
 end
 
 function Functions.ChangeSize(modifier)
-    local Char = LP.Character
-    local Hum = Char and Char:FindFirstChild("Humanoid")
-    if not Hum then return end
-
-    -- Liste des paramètres de taille R15
-    local Scales = {
-        "BodyHeightScale",
-        "BodyWidthScale",
-        "BodyDepthScale",
-        "HeadScale"
-    }
-
-    for _, scaleName in pairs(Scales) do
-        -- On cherche l'objet, s'il n'existe pas, on le crée !
-        local scaleValue = Hum:FindFirstChild(scaleName)
-        if not scaleValue then
-            scaleValue = Instance.new("NumberValue")
-            scaleValue.Name = scaleName
-            scaleValue.Parent = Hum
+    local Hum = LP.Character and LP.Character:FindFirstChild("Humanoid")
+    if Hum then
+        local Scales = {"BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale"}
+        for _, n in pairs(Scales) do
+            local v = Hum:FindFirstChild(n) or Instance.new("NumberValue", Hum)
+            v.Name = n
+            v.Value = modifier
         end
-        scaleValue.Value = modifier
     end
 end
 
+-- [[ 🛡️ SYSTÈME & EVENTS ]] --
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if Functions.InfJump and LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
 function Functions.EnableAntiAFK()
     local VU = game:GetService("VirtualUser")
-    LP.Idled:Connect(function()
-        VU:CaptureController()
-        VU:ClickButton2(Vector2.new())
+    LP.Idled:Connect(function() 
+        VU:CaptureController() 
+        VU:ClickButton2(Vector2.new()) 
     end)
 end
 
