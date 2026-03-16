@@ -17,48 +17,59 @@ Functions.RoleESP = false
 local LP = game:GetService("Players").LocalPlayer
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local NoclipConnection = nil
+
+-- Fonction utilitaire pour vérifier si le personnage est valide
+local function GetChar()
+    return LP.Character or LP.CharacterAdded:Wait()
+end
+
+local function GetHum()
+    local char = LP.Character
+    return char and char:FindFirstChildOfClass("Humanoid")
+end
 
 -- [[ 🏃 MOUVEMENT ]] --
 function Functions.SetSpeed(value)
     Functions.WalkSpeed = value
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = value
-    end
+    local hum = GetHum()
+    if hum then hum.WalkSpeed = value end
 end
 
--- CORRECTIF : Ajout de la fonction manquante pour le Main.lua
 function Functions.SetJump(value)
     Functions.JumpPower = value
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        local Hum = LP.Character.Humanoid
-        Hum.UseJumpPower = true 
-        Hum.JumpPower = value
+    local hum = GetHum()
+    if hum then
+        hum.UseJumpPower = true 
+        hum.JumpPower = value
     end
 end
 
 function Functions.ToggleFly(state)
     Functions.Flying = state
-    local Char = LP.Character
-    if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
-    local Root = Char.HumanoidRootPart
+    local char = LP.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local root = char.HumanoidRootPart
 
     if Functions.Flying then
-        if Root:FindFirstChild("UniversalFly") then Root.UniversalFly:Destroy() end
+        -- Nettoyage si un ancien Fly existe
+        if root:FindFirstChild("UniversalFly") then root.UniversalFly:Destroy() end
+        
         local BV = Instance.new("BodyVelocity")
         BV.Name = "UniversalFly"
-        BV.Parent = Root
+        BV.Parent = root
         BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         BV.Velocity = Vector3.new(0,0,0)
 
         task.spawn(function()
-            while Functions.Flying and Root and Root.Parent do
-                local Cam = workspace.CurrentCamera.CFrame
+            while Functions.Flying and root and root.Parent do
+                local cam = workspace.CurrentCamera.CFrame
                 local dir = Vector3.new(0,0,0)
-                if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + Cam.LookVector end
-                if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - Cam.LookVector end
-                if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - Cam.RightVector end
-                if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + Cam.RightVector end
+                if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.LookVector end
+                if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.LookVector end
+                if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end
+                if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
                 BV.Velocity = dir * Functions.FlySpeed
                 task.wait()
             end
@@ -74,13 +85,13 @@ function Functions.ToggleNoclip(state)
             NoclipConnection = RunService.Stepped:Connect(function()
                 if Functions.Noclip and LP.Character then
                     for _, part in pairs(LP.Character:GetDescendants()) do
-                        if part:IsA("BasePart") then part.CanCollide = false end
+                        if part:IsA("BasePart") and part.CanCollide then 
+                            part.CanCollide = false 
+                        end
                     end
-                else
-                    if NoclipConnection then 
-                        NoclipConnection:Disconnect() 
-                        NoclipConnection = nil 
-                    end
+                elseif NoclipConnection then 
+                    NoclipConnection:Disconnect() 
+                    NoclipConnection = nil 
                 end
             end)
         end
@@ -89,18 +100,21 @@ end
 
 -- [[ 📍 TÉLÉPORTATION ]] --
 function Functions.SetTPPoint()
-    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        Functions.SavedPosition = LP.Character.HumanoidRootPart.CFrame
-        print("📍 Position enregistrée !")
+    local char = LP.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        Functions.SavedPosition = char.HumanoidRootPart.CFrame
+        print("📍 ***Position enregistrée !***")
     end
 end
 
 function Functions.GoToTPPoint()
-    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and Functions.SavedPosition then
-        local Root = LP.Character.HumanoidRootPart
-        local dist = (Root.Position - Functions.SavedPosition.Position).Magnitude
+    local char = LP.Character
+    if char and char:FindFirstChild("HumanoidRootPart") and Functions.SavedPosition then
+        local root = char.HumanoidRootPart
+        local dist = (root.Position - Functions.SavedPosition.Position).Magnitude
+        
         task.spawn(function()
-            local tween = game:GetService("TweenService"):Create(Root, TweenInfo.new(dist / Functions.TPSpeed, Enum.EasingStyle.Linear), {CFrame = Functions.SavedPosition})
+            local tween = TweenService:Create(root, TweenInfo.new(dist / Functions.TPSpeed, Enum.EasingStyle.Linear), {CFrame = Functions.SavedPosition})
             local oldNoclip = Functions.Noclip
             Functions.ToggleNoclip(true)
             tween:Play()
@@ -119,7 +133,7 @@ function Functions.RemoteParry()
         local parryRemote = (remotes and remotes:FindFirstChild("Parry")) 
                             or rStorage:FindFirstChild("ParryAttempt") 
                             or rStorage:FindFirstChild("Parry")
-        if parryRemote then
+        if parryRemote and parryRemote:IsA("RemoteEvent") then
             parryRemote:FireServer(ball.Position, ball.CFrame)
         end
     end
@@ -146,6 +160,7 @@ function Functions.ToggleRoleESP(state)
                 end
                 task.wait(1)
             end
+            -- Nettoyage
             for _, v in pairs(game.Players:GetPlayers()) do 
                 if v.Character and v.Character:FindFirstChild("RoleHighlight") then 
                     v.Character.RoleHighlight:Destroy() 
@@ -157,7 +172,10 @@ end
 
 function Functions.GetSilentTarget()
     local target, shortestDist = nil, math.huge
-    local isMurderer = LP.Backpack:FindFirstChild("Knife") or (LP.Character and LP.Character:FindFirstChild("Knife"))
+    local char = LP.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+
+    local isMurderer = LP.Backpack:FindFirstChild("Knife") or char:FindFirstChild("Knife")
     
     for _, v in pairs(game.Players:GetPlayers()) do
         if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
@@ -166,7 +184,7 @@ function Functions.GetSilentTarget()
                     return v.Character.HumanoidRootPart 
                 end
             else
-                local d = (v.Character.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                local d = (v.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude
                 if d < shortestDist then 
                     shortestDist = d 
                     target = v.Character.HumanoidRootPart 
@@ -177,7 +195,7 @@ function Functions.GetSilentTarget()
     return target
 end
 
--- CORRECTIF : Initialisation du Hook une seule fois
+-- Hook de Namecall (Sécurisé contre les exécutions multiples)
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local args = {...}
@@ -192,7 +210,7 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     return oldNamecall(self, ...)
 end)
 
--- [[ 🛡️ AUTO-SPAM ]] --
+-- [[ 🛡️ BOUCLES GLOBALES ]] --
 task.spawn(function()
     while true do
         if Functions.AutoSpam then
@@ -202,7 +220,7 @@ task.spawn(function()
     end
 end)
 
--- [[ 🛡️ EVENTS ]] --
+-- [[ 🛡️ ÉVÉNEMENTS ]] --
 UIS.InputBegan:Connect(function(i, p)
     if not p and i.KeyCode == Functions.ParryKey then 
         Functions.RemoteParry() 
@@ -210,8 +228,11 @@ UIS.InputBegan:Connect(function(i, p)
 end)
 
 UIS.JumpRequest:Connect(function()
-    if Functions.InfJump and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    if Functions.InfJump then
+        local hum = GetHum()
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
     end
 end)
 
