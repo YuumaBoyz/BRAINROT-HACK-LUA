@@ -3,7 +3,7 @@ local UI = {}
 function UI.Init(Lib)
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     local Window = Rayfield:CreateWindow({
-        Name = "🌐 UNIVERSAL HUB v6.2",
+        Name = "🌐 UNIVERSAL HUB v6.6",
         LoadingTitle = "Initialisation du Multi-Tool...",
         LoadingSubtitle = "par YuumaBoyz",
         ConfigurationSaving = {
@@ -54,6 +54,39 @@ function UI.Init(Lib)
     TabMove:CreateButton({
         Name = "🌀 Se téléporter au Point",
         Callback = function() Lib.GoToTPPoint() end,
+    })
+
+    -- [[ ⚔️ ONGLET BLADE BALL ]] --
+    local TabBlade = Window:CreateTab("⚔️ Blade Ball")
+    TabBlade:CreateSection("Remote Sniper (Distance)")
+
+    TabBlade:CreateKeybind({
+        Name = "Touche d'Interception",
+        CurrentKeybind = "F",
+        HoldToInteract = false,
+        Flag = "ParryKeybind",
+        Callback = function(Keybind)
+            Lib.ParryKey = Enum.KeyCode[Keybind]
+        end,
+    })
+
+    TabBlade:CreateParagraph({
+        Title = "🚀 Comment ça marche ?", 
+        Content = "Contrairement au parry normal, cette touche envoie directement l'ordre au serveur de renvoyer la balle. Tu peux le faire même si la balle est LOIN, tant qu'elle se dirige vers toi."
+    })
+
+    TabBlade:CreateSection("Paramètres Avancés")
+
+    TabBlade:CreateButton({
+        Name = "Vérifier la Balle (Debug)",
+        Callback = function()
+            local ball = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls")
+            if ball then
+                print("✅ Balle trouvée à la position : " .. tostring(ball.Position))
+            else
+                print("❌ Balle introuvable.")
+            end
+        end,
     })
 
     -- [[ 👁️ ONGLET VISUELS ]] --
