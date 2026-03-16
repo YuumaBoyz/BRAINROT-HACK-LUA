@@ -1,6 +1,6 @@
 -- [[ BRAINROT HUB - MAIN EXECUTION ]] --
 -- Fusion totale : Sécurité accrue, Modularité & Auto-Bypass
--- Auteur : Expert Scripting
+-- Auteur : YuumaBoyz
 
 -- 1. Attendre le chargement complet du jeu
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -28,7 +28,6 @@ local function SafeLoad(name, url)
                 print("✅ [" .. name .. "] : Chargé avec succès.")
                 return result
             else
-                -- Si result est nil, c'est qu'il manque le "return" à la fin du fichier sur GitHub
                 warn("⚠️ [" .. name .. "] : Le fichier est vide ou n'a rien retourné. Vérifie le 'return' à la fin du script sur GitHub !")
                 return nil
             end
@@ -47,17 +46,18 @@ print("⚡ Initialisation du Brainrot Hub...")
 local Lib = SafeLoad("Logic", URL_FUNCTIONS)
 local UI = SafeLoad("UI", URL_INTERFACE)
 
--- Arrêt immédiat si un composant manque pour éviter les erreurs "nil"
+-- Arrêt immédiat si un composant manque
 if not Lib or not UI then
-    return warn("⛔ ÉCHEC CRITIQUE : Impossible de lancer le Hub sans tous les composants.")
+    return warn("⛔ ÉCHEC CRITIQUE : Impossible de lancer le Hub.")
 end
 
 -- [[ 🛠️ ACTIVATION DES SYSTÈMES DE BASE ]] --
-Lib.EnableAntiAFK() -- Protection contre la déconnexion
-Lib.ResetPhysics()  -- Nettoyage initial
+Lib.EnableAntiAFK() 
+Lib.ResetPhysics()
 
 -- [[ 🖥️ INITIALISATION DE L'INTERFACE ]] --
-local Window, FlyToggle, StealToggle, KillToggle = UI.Init(Lib) 
+-- UI.Init doit exister dans ton Interface.lua et accepter Lib en argument
+local Window = UI.Init(Lib) 
 
 -- [[ 🌪️ BOUCLE ASYNCHRONE : FLING AURA (COMBAT) ]] --
 task.spawn(function()
@@ -65,8 +65,8 @@ task.spawn(function()
         if Lib.KillAura then
             local Target = Lib.GetClosestPlayer()
             if Target then
-                Lib.Fling(Target)   -- Propulsion physique
-                Lib.ResetPhysics()  -- 🟢 BYPASS : Nettoie la vélocité
+                Lib.Fling(Target)
+                Lib.ResetPhysics()
             end
         end
     end
@@ -80,9 +80,8 @@ task.spawn(function()
             local Character = LocalPlayer.Character
             if Target and Character and Character:FindFirstChild("HumanoidRootPart") then
                 local HRP = Character.HumanoidRootPart
-                -- Téléportation flash
                 HRP.CFrame = Target.CFrame * CFrame.new(0, 2, 0)
-                Lib.ResetPhysics() -- 🟢 BYPASS
+                Lib.ResetPhysics()
                 task.wait(0.15)
             end
         end
@@ -93,7 +92,7 @@ end)
 task.spawn(function()
     while task.wait(1.5) do
         if Lib.PermanentBarrier then
-            Lib.LockMyBarrier() -- Force le verrouillage de la barrière
+            Lib.LockMyBarrier()
         end
     end
 end)
