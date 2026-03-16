@@ -1,7 +1,7 @@
 local UI = {}
 
 function UI.Init(Lib)
-    -- Chargement de Rayfield avec sécurité
+    -- 1. Chargement de Rayfield
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     
     local Window = Rayfield:CreateWindow({
@@ -25,7 +25,17 @@ function UI.Init(Lib)
         Increment = 1,
         CurrentValue = 16,
         Callback = function(v) 
-            if Lib.SetSpeed then Lib.SetSpeed(v) end 
+            if Lib and Lib.SetSpeed then Lib.SetSpeed(v) end 
+        end,
+    })
+
+    TabMove:CreateSlider({
+        Name = "Puissance de saut",
+        Range = {50, 500},
+        Increment = 1,
+        CurrentValue = 50,
+        Callback = function(v) 
+            if Lib and Lib.SetJump then Lib.SetJump(v) end 
         end,
     })
 
@@ -33,23 +43,23 @@ function UI.Init(Lib)
         Name = "Activer le Vol (Fly)",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib.ToggleFly then Lib.ToggleFly(v) end 
+            if Lib and Lib.ToggleFly then Lib.ToggleFly(v) end 
         end,
     })
 
     TabMove:CreateToggle({
-        Name = "Noclip (Traverser les murs)",
+        Name = "Noclip (Murs)",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib.ToggleNoclip then Lib.ToggleNoclip(v) end 
+            if Lib and Lib.ToggleNoclip then Lib.ToggleNoclip(v) end 
         end,
     })
 
     TabMove:CreateToggle({
-        Name = "Saut Infini (Inf Jump)",
+        Name = "Saut Infini",
         CurrentValue = false,
         Callback = function(v) 
-            Lib.InfJump = v
+            if Lib then Lib.InfJump = v end
         end,
     })
 
@@ -58,14 +68,14 @@ function UI.Init(Lib)
     TabMove:CreateButton({
         Name = "📍 Poser un Point de TP",
         Callback = function() 
-            if Lib.SetTPPoint then Lib.SetTPPoint() end 
+            if Lib and Lib.SetTPPoint then Lib.SetTPPoint() end 
         end,
     })
 
     TabMove:CreateButton({
         Name = "🌀 Se téléporter au Point",
         Callback = function() 
-            if Lib.GoToTPPoint then Lib.GoToTPPoint() end 
+            if Lib and Lib.GoToTPPoint then Lib.GoToTPPoint() end 
         end,
     })
 
@@ -77,7 +87,7 @@ function UI.Init(Lib)
         Name = "Role ESP",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib.ToggleRoleESP then Lib.ToggleRoleESP(v) end
+            if Lib and Lib.ToggleRoleESP then Lib.ToggleRoleESP(v) end
         end,
     })
 
@@ -85,18 +95,11 @@ function UI.Init(Lib)
         Name = "Silent Aim",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib.ToggleSilentAim then Lib.ToggleSilentAim(v) end
+            if Lib then Lib.SilentAim = v end
         end,
     })
 
-    TabMM2:CreateButton({
-        Name = "🔫 Auto-Grab Gun",
-        Callback = function() 
-            if Lib.AutoGrabGun then Lib.AutoGrabGun() end
-        end,
-    })
-
-    -- [[ ⚔️ ONGLET BLADE BALL ]] --
+    -- [[ ⚔️ BLADE BALL ]] --
     local TabBlade = Window:CreateTab("⚔️ Blade Ball")
     TabBlade:CreateKeybind({
         Name = "Touche Parry",
@@ -112,19 +115,7 @@ function UI.Init(Lib)
         Name = "Auto-Spam Duel",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib.ToggleAutoSpam then Lib.ToggleAutoSpam(v) end 
-        end,
-    })
-
-    -- [[ 🎭 ONGLET FUN ]] --
-    local TabFun = Window:CreateTab("🎭 Fun")
-    TabFun:CreateSlider({
-        Name = "Taille du personnage",
-        Range = {0.1, 10},
-        Increment = 0.1,
-        CurrentValue = 1,
-        Callback = function(Value) 
-            if Lib.ChangeSize then Lib.ChangeSize(Value) end 
+            if Lib then Lib.AutoSpam = v end 
         end,
     })
 
@@ -137,22 +128,23 @@ function UI.Init(Lib)
         end,
     })
 
-    -- [[ 🛡️ LOGIQUE DE PERSISTANCE & SÉCURITÉ ]] --
+    -- [[ 🛡️ LOGIQUE DE PERSISTANCE ]] --
     local LP = game:GetService("Players").LocalPlayer
     
-    -- Anti-Reset de la vitesse lors du respawn
+    -- Réactivation après mort
     LP.CharacterAdded:Connect(function(Character)
-        task.wait(1)
-        if Lib.SetSpeed then Lib.SetSpeed(Lib.WalkSpeed) end
+        task.wait(1.5) -- Délai pour laisser le perso charger
+        if Lib and Lib.SetSpeed then Lib.SetSpeed(Lib.WalkSpeed) end
+        if Lib and Lib.SetJump then Lib.SetJump(Lib.JumpPower) end
     end)
 
-    -- Boucle de vérification (évite les nil errors)
+    -- Boucle anti-reset serveur (silencieuse)
     task.spawn(function()
-        while task.wait(1) do
+        while task.wait(2) do
             pcall(function()
-                if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+                if LP.Character and LP.Character:FindFirstChild("Humanoid") and Lib then
                     local hum = LP.Character.Humanoid
-                    if Lib.WalkSpeed and hum.WalkSpeed ~= Lib.WalkSpeed then 
+                    if hum.WalkSpeed ~= Lib.WalkSpeed then 
                         hum.WalkSpeed = Lib.WalkSpeed 
                     end
                 end
