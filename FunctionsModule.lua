@@ -1,7 +1,7 @@
--- [[ ⚙️ UNIVERSAL FUNCTIONS MODULE v6.8 ]] --
+-- [[ ⚙️ UNIVERSAL FUNCTIONS MODULE v6.9 ]] --
 local Functions = {}
 
--- Variables de configuration
+-- [[ ⚙️ CONFIGURATION & VARIABLES ]] --
 Functions.FlySpeed = 60
 Functions.WalkSpeed = 16
 Functions.JumpPower = 50
@@ -10,10 +10,14 @@ Functions.Flying = false
 Functions.Noclip = false
 Functions.InfJump = false
 Functions.SavedPosition = nil
-Functions.ParryKey = "F" -- MODIFICATION : On utilise du texte "F" au lieu de l'Enum
+Functions.ParryKey = "F" 
 Functions.SilentAim = false
 Functions.AutoSpam = false
 Functions.RoleESP = false
+
+-- Options de Boost (Blade Ball)
+Functions.BallBoost = false 
+Functions.BoostMultiplier = 1.5 
 
 local LP = game:GetService("Players").LocalPlayer
 local UIS = game:GetService("UserInputService")
@@ -21,12 +25,23 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local NoclipConnection = nil
 
--- Helpers sécurisés
+-- [[ 🛠️ HELPERS ]] --
 local function GetHum()
     return LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 end
 
--- [[ 🏃 FONCTIONS DE MOUVEMENT ]] --
+-- Fonction pour trouver la balle réelle (Partie physique)
+local function GetBall()
+    local ballFolder = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls") or workspace:FindFirstChild("CurrentBall")
+    if ballFolder then
+        if ballFolder:IsA("BasePart") then return ballFolder end
+        local realBall = ballFolder:FindFirstChildOfClass("BasePart")
+        return realBall
+    end
+    return nil
+end
+
+-- [[ 🏃 MOUVEMENT ]] --
 function Functions.SetSpeed(value)
     Functions.WalkSpeed = value
     local hum = GetHum()
@@ -75,7 +90,7 @@ function Functions.ToggleNoclip(state)
     if state and not NoclipConnection then
         NoclipConnection = RunService.Stepped:Connect(function()
             if not Functions.Noclip then 
-                NoclipConnection:Disconnect()
+                if NoclipConnection then NoclipConnection:Disconnect() end
                 NoclipConnection = nil
                 return 
             end
@@ -103,42 +118,62 @@ function Functions.GoToTPPoint()
     end
 end
 
--- [[ ⚔️ BLADE BALL & MM2 ]] --
+-- [[ ⚔️ BLADE BALL ]] --
+
+-- Fonction 1 : Parade classique
 function Functions.RemoteParry()
-    local ball = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls") or workspace:FindFirstChild("CurrentBall")
+    local ball = GetBall()
     local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Parry", true)
     if ball and remote and remote:IsA("RemoteEvent") then
         remote:FireServer(ball.Position, ball.CFrame)
     end
 end
 
--- Hook de Silent Aim (MM2) avec protection contre les crashs
+-- Fonction 2 : Boost de vitesse (Indépendant)
+function Functions.ApplyBallBoost()
+    if not Functions.BallBoost then return end
+    local ball = GetBall()
+    if ball then
+        pcall(function()
+            -- Injection de vélocité
+            ball.AssemblyLinearVelocity = ball.AssemblyLinearVelocity * Functions.BoostMultiplier
+        end)
+    end
+end
+
+-- [[ 🕵️ MM2 ]] --
 local success, err = pcall(function()
     local oldNamecall
     oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
         local method = getnamecallmethod()
         if Functions.SilentAim and method == "FireServer" and (self.Name == "Shoot" or self.Name == "Throw") then
-            -- Logique simplifiée pour éviter le lag
             return oldNamecall(self, ...)
         end
         return oldNamecall(self, ...)
     end)
 end)
 
--- [[ 🛡️ BOUCLE AUTOMATIQUE ]] --
+-- [[ 🛡️ BOUCLES & ÉVÉNEMENTS ]] --
+
+-- Boucle Auto-Spam
 task.spawn(function()
     while task.wait(0.05) do
-        if Functions.AutoSpam then Functions.RemoteParry() end
+        if Functions.AutoSpam then 
+            Functions.RemoteParry() 
+            if Functions.BallBoost then Functions.ApplyBallBoost() end
+        end
     end
 end)
 
--- Events
+-- Écoute des touches (Parry + Boost si activé)
 UIS.InputBegan:Connect(function(i, p)
     if not p then
-        -- On convertit le texte en KeyCode seulement lors de l'appui
         local keyToDetect = Enum.KeyCode[Functions.ParryKey]
         if i.KeyCode == keyToDetect then 
             Functions.RemoteParry() 
+            if Functions.BallBoost then 
+                Functions.ApplyBallBoost() 
+            end
         end
     end
 end)

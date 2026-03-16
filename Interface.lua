@@ -102,7 +102,8 @@ function UI.Init(Lib)
     -- [[ ⚔️ BLADE BALL ]] --
     local TabBlade = Window:CreateTab("⚔️ Blade Ball")
     
-    -- CORRECTIF ICI : On passe la touche en TEXTE simple
+    TabBlade:CreateSection("Contrôles de Parade")
+
     TabBlade:CreateKeybind({
         Name = "Touche Parry",
         CurrentKeybind = "F",
@@ -110,7 +111,7 @@ function UI.Init(Lib)
         Flag = "ParryKeybind",
         Callback = function(Keybind)
             if Lib then 
-                Lib.ParryKey = Keybind -- On envoie juste "F" (string)
+                Lib.ParryKey = Keybind 
             end
         end,
     })
@@ -120,6 +121,26 @@ function UI.Init(Lib)
         CurrentValue = false,
         Callback = function(v) 
             if Lib then Lib.AutoSpam = v end 
+        end,
+    })
+
+    TabBlade:CreateSection("🔥 Module d'Accélération (Rage)")
+
+    TabBlade:CreateToggle({
+        Name = "Activer le Ball Boost",
+        CurrentValue = false,
+        Callback = function(v) 
+            if Lib then Lib.BallBoost = v end 
+        end,
+    })
+
+    TabBlade:CreateSlider({
+        Name = "Puissance du Boost",
+        Range = {1, 5},
+        Increment = 0.1,
+        CurrentValue = 1.5,
+        Callback = function(v) 
+            if Lib then Lib.BoostMultiplier = v end 
         end,
     })
 
