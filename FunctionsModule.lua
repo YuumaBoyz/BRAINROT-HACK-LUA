@@ -14,6 +14,7 @@ Functions.ParryKey = "F"
 Functions.SilentAim = false
 Functions.AutoSpam = false
 Functions.RoleESP = false
+Functions.NoCooldown = false -- Nouvelle option
 
 -- Options de Boost (Blade Ball)
 Functions.BallBoost = false 
@@ -54,6 +55,31 @@ function Functions.SetJump(value)
     if hum then
         hum.UseJumpPower = true 
         hum.JumpPower = value
+    end
+end
+
+-- [[ ⚔️ FONCTION NO COOLDOWN (Blade Ball) ]] --
+function Functions.ToggleNoCooldown(state)
+    Functions.NoCooldown = state
+    
+    if state then
+        task.spawn(function()
+            -- On cherche le script de capacité local du joueur
+            while Functions.NoCooldown do
+                pcall(function()
+                    local char = game:GetService("Players").LocalPlayer.Character
+                    if char then
+                        -- Recherche de variables de cooldown dans les scripts locaux
+                        for _, v in pairs(getgc(true)) do
+                            if type(v) == "table" and rawget(v, "Cooldown") then
+                                v.Cooldown = 0 -- On force le cooldown à zéro
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.5)
+            end
+        end)
     end
 end
 

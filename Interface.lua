@@ -5,7 +5,7 @@ function UI.Init(Lib)
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     
     local Window = Rayfield:CreateWindow({
-        Name = "🌐 UNIVERSAL HUB v6.8",
+        Name = "🌐 UNIVERSAL HUB v7.0",
         LoadingTitle = "Initialisation du Multi-Tool...",
         LoadingSubtitle = "par YuumaBoyz",
         ConfigurationSaving = {
@@ -29,11 +29,12 @@ function UI.Init(Lib)
         end,
     })
 
+    -- MODIFICATION : Range baissé à 10 pour plus de précision
     TabMove:CreateSlider({
         Name = "Puissance de saut",
-        Range = {50, 500},
+        Range = {10, 500}, 
         Increment = 1,
-        CurrentValue = 50,
+        CurrentValue = 30,
         Callback = function(v) 
             if Lib and Lib.SetJump then Lib.SetJump(v) end 
         end,
@@ -124,6 +125,19 @@ function UI.Init(Lib)
         end,
     })
 
+    TabBlade:CreateSection("⚡ Capacités Spéciales")
+
+    -- NOUVELLE FONCTIONNALITÉ : No Cooldown
+    TabBlade:CreateToggle({
+        Name = "No Cooldown (BETA) ⚡",
+        CurrentValue = false,
+        Callback = function(v) 
+            if Lib and Lib.ToggleNoCooldown then 
+                Lib.ToggleNoCooldown(v) 
+            end 
+        end,
+    })
+
     TabBlade:CreateSection("🔥 Module d'Accélération (Rage)")
 
     TabBlade:CreateToggle({
@@ -155,7 +169,7 @@ function UI.Init(Lib)
 
     Rayfield:Notify({
         Title = "SYSTÈME CHARGÉ",
-        Content = "L'interface est prête !",
+        Content = "Hub v7.0 prêt à l'emploi !",
         Duration = 3,
         Image = 4483362458,
     })
