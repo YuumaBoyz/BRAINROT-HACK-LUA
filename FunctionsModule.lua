@@ -27,6 +27,7 @@ function Functions.SetSpeed(value)
     end
 end
 
+-- CORRECTIF : Ajout de la fonction manquante pour le Main.lua
 function Functions.SetJump(value)
     Functions.JumpPower = value
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
