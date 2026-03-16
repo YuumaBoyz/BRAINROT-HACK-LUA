@@ -12,7 +12,6 @@ local LP = game:GetService("Players").LocalPlayer
 
 -- [[ 🏃 MOUVEMENT DE BASE ]] --
 
--- Change la vitesse de marche
 function Functions.SetSpeed(value)
     Functions.WalkSpeed = value
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
@@ -20,18 +19,16 @@ function Functions.SetSpeed(value)
     end
 end
 
--- Change la puissance de saut
 function Functions.SetJump(value)
     Functions.JumpPower = value
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
         LP.Character.Humanoid.JumpPower = value
-        LP.Character.Humanoid.UseJumpPower = true -- Force l'utilisation du JumpPower
+        LP.Character.Humanoid.UseJumpPower = true 
     end
 end
 
 -- [[ 🚀 TRICHE AVANCÉE ]] --
 
--- Vol (Fly) Universel
 function Functions.ToggleFly(state)
     Functions.Flying = state
     local Char = LP.Character
@@ -56,63 +53,57 @@ function Functions.ToggleFly(state)
                 BV.Velocity = dir * Functions.FlySpeed
                 task.wait()
             end
-            BV:Destroy()
+            if BV then BV:Destroy() end
         end)
     end
 end
 
--- NOCLIP (Traverser les murs)
 function Functions.ToggleNoclip(state)
     Functions.Noclip = state
-    -- Utilise le service de rendu pour désactiver les collisions à chaque frame
-    game:GetService("RunService").Stepped:Connect(function()
+    local RunService = game:GetService("RunService")
+    
+    local function noclipLoop()
         if Functions.Noclip and LP.Character then
             for _, part in pairs(LP.Character:GetDescendants()) do
-                if part:IsA("BasePart") and part.CanCollide then
+                if part:IsA("BasePart") then
                     part.CanCollide = false
                 end
             end
         end
-    end)
+    end
+    RunService.Stepped:Connect(noclipLoop)
 end
 
--- INFINITE JUMP (Sauter dans les airs)
+-- INFINITE JUMP
 game:GetService("UserInputService").JumpRequest:Connect(function()
     if Functions.InfJump and LP.Character and LP.Character:FindFirstChild("Humanoid") then
         LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
-- [[ 🎭 MANIPULATION D'APPARENCE ]] --
+-- [[ 🎭 MANIPULATION D'APPARENCE ]] --
 
 function Functions.ChangeSize(modifier)
     local Char = LP.Character
     if Char and Char:FindFirstChild("Humanoid") then
         local Hum = Char.Humanoid
-        
-        -- Liste des objets de scale pour les avatars R15
         local Scales = {
             "BodyHeightScale",
             "BodyWidthScale",
             "BodyDepthScale",
             "HeadScale"
         }
-        
         for _, scaleName in pairs(Scales) do
             local scaleValue = Hum:FindFirstChild(scaleName)
             if scaleValue then
                 scaleValue.Value = modifier
             end
         end
-        
-        -- Note : Pour les jeux R6, la taille est plus difficile à changer 
-        -- localement sans mourir, mais cela fonctionne sur 90% des jeux récents.
     end
 end
 
--- [[ 🛡️ SYSTÈMES SYSTÈME ]] --
+-- [[ 🛡️ SYSTÈMES ]] --
 
--- Anti-AFK (Pour ne pas être déconnecté après 20 min)
 function Functions.EnableAntiAFK()
     local VU = game:GetService("VirtualUser")
     LP.Idled:Connect(function()
