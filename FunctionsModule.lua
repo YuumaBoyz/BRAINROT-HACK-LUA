@@ -72,6 +72,32 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
     end
 end)
 
+-- Supprimer les barrières de mort/kick (VIP Doors)
+function Functions.BypassTouch()
+    for _, v in pairs(workspace:GetDescendants()) do
+        -- On cherche les objets qui déclenchent un script au toucher
+        if v:IsA("TouchTransmitter") then
+            local parent = v.Parent
+            -- Si le nom contient VIP, Kill, Death ou Kick, on supprime le danger
+            if parent.Name:find("VIP") or parent.Name:find("Kill") or parent.Name:find("Death") then
+                v:Destroy() 
+            end
+        end
+    end
+    print("🛡️ TouchInterests dangereux supprimés !")
+end
+
+-- Tenter de récupérer tous les objets via RemoteEvents
+function Functions.GetRemoteTools()
+    for _, v in pairs(game:GetDescendants()) do
+        -- On cherche les événements qui pourraient donner des items
+        if v:IsA("RemoteEvent") and (v.Name:find("Give") or v.Name:find("Tool") or v.Name:find("Item")) then
+            v:FireServer() -- On tente de déclencher l'événement
+        end
+    end
+    print("🎁 Tentative de récupération d'items envoyée !")
+end
+
 function Functions.ChangeSize(modifier)
     local Char = LP.Character
     local Hum = Char and Char:FindFirstChild("Humanoid")

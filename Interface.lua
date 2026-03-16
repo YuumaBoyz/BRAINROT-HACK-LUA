@@ -64,23 +64,17 @@ function UI.Init(Lib)
 
     TabFun:CreateButton({
         Name = "Devenir GÉANT (x3)",
-        Callback = function()
-            Lib.ChangeSize(3)
-        end,
+        Callback = function() Lib.ChangeSize(3) end,
     })
 
     TabFun:CreateButton({
         Name = "Taille Normale (x1)",
-        Callback = function()
-            Lib.ChangeSize(1)
-        end,
+        Callback = function() Lib.ChangeSize(1) end,
     })
 
     TabFun:CreateButton({
         Name = "Devenir MINUSCULE (x0.3)",
-        Callback = function()
-            Lib.ChangeSize(0.3)
-        end,
+        Callback = function() Lib.ChangeSize(0.3) end,
     })
 
     TabFun:CreateSlider({
@@ -88,8 +82,30 @@ function UI.Init(Lib)
         Range = {0.1, 10},
         Increment = 0.1,
         CurrentValue = 1,
-        Callback = function(Value)
-            Lib.ChangeSize(Value)
+        Callback = function(Value) Lib.ChangeSize(Value) end,
+    })
+
+    -- [[ 🔓 ONGLET UNLOCKS ]] --
+    local TabUnlock = Window:CreateTab("🔓 Unlocks")
+
+    TabUnlock:CreateSection("Bypass de Sécurité")
+
+    TabUnlock:CreateButton({
+        Name = "Supprimer Kill/VIP Parts (Bypass)",
+        Callback = function() Lib.BypassTouch() end,
+    })
+
+    TabUnlock:CreateSection("Items & Give")
+
+    TabUnlock:CreateButton({
+        Name = "Tenter Give VIP Tools (Remotes)",
+        Callback = function() Lib.GetRemoteTools() end,
+    })
+
+    TabUnlock:CreateButton({
+        Name = "🚀 Lancer Infinite Yield",
+        Callback = function()
+            loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
         end,
     })
 
