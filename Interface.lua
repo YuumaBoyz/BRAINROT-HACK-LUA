@@ -1,7 +1,9 @@
 local UI = {}
 
 function UI.Init(Lib)
+    -- Chargement de Rayfield avec sécurité
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+    
     local Window = Rayfield:CreateWindow({
         Name = "🌐 UNIVERSAL HUB v6.8",
         LoadingTitle = "Initialisation du Multi-Tool...",
@@ -22,167 +24,112 @@ function UI.Init(Lib)
         Range = {16, 500},
         Increment = 1,
         CurrentValue = 16,
-        Callback = function(v) Lib.SetSpeed(v) end,
+        Callback = function(v) 
+            if Lib.SetSpeed then Lib.SetSpeed(v) end 
+        end,
     })
 
     TabMove:CreateToggle({
         Name = "Activer le Vol (Fly)",
         CurrentValue = false,
-        Callback = function(v) Lib.ToggleFly(v) end,
+        Callback = function(v) 
+            if Lib.ToggleFly then Lib.ToggleFly(v) end 
+        end,
     })
 
     TabMove:CreateToggle({
         Name = "Noclip (Traverser les murs)",
         CurrentValue = false,
-        Callback = function(v) Lib.ToggleNoclip(v) end,
+        Callback = function(v) 
+            if Lib.ToggleNoclip then Lib.ToggleNoclip(v) end 
+        end,
     })
 
     TabMove:CreateToggle({
         Name = "Saut Infini (Inf Jump)",
         CurrentValue = false,
-        Callback = function(v) Lib.InfJump = v end,
+        Callback = function(v) 
+            Lib.InfJump = v
+        end,
     })
 
-    TabMove:CreateSection("Téléportation (Waypoints Stealth)")
+    TabMove:CreateSection("Téléportation")
 
     TabMove:CreateButton({
         Name = "📍 Poser un Point de TP",
-        Callback = function() Lib.SetTPPoint() end,
+        Callback = function() 
+            if Lib.SetTPPoint then Lib.SetTPPoint() end 
+        end,
     })
 
     TabMove:CreateButton({
-        Name = "🌀 Se téléporter au Point (Indétectable)",
-        Callback = function() Lib.GoToTPPoint() end,
+        Name = "🌀 Se téléporter au Point",
+        Callback = function() 
+            if Lib.GoToTPPoint then Lib.GoToTPPoint() end 
+        end,
     })
 
     -- [[ 🕵️ ONGLET MURDER MYSTERY 2 ]] --
-    local TabMM2 = Window:CreateTab("🕵️ Murder Mystery 2")
-    TabMM2:CreateSection("Avantages de Rôle")
+    local TabMM2 = Window:CreateTab("🕵️ MM2")
+    TabMM2:CreateSection("Avantages")
 
     TabMM2:CreateToggle({
-        Name = "Role ESP (Vision à travers murs)",
+        Name = "Role ESP",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib and Lib.ToggleRoleESP then Lib.ToggleRoleESP(v) 
-            else warn("⚠️ Lib.ToggleRoleESP non prêt") end
+            if Lib.ToggleRoleESP then Lib.ToggleRoleESP(v) end
         end,
     })
 
     TabMM2:CreateToggle({
-        Name = "Silent Aim (Sheriff/Murderer Bot)",
+        Name = "Silent Aim",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib and Lib.ToggleSilentAim then Lib.ToggleSilentAim(v)
-            else warn("⚠️ Lib.ToggleSilentAim non prêt") end
+            if Lib.ToggleSilentAim then Lib.ToggleSilentAim(v) end
         end,
     })
-
-    TabMM2:CreateSection("Utilitaires")
 
     TabMM2:CreateButton({
-        Name = "🔫 Auto-Grab Gun (Récupération Rapide)",
+        Name = "🔫 Auto-Grab Gun",
         Callback = function() 
-            if Lib and Lib.AutoGrabGun then Lib.AutoGrabGun()
-            else Rayfield:Notify({Title = "Erreur", Content = "Fonction non chargée", Duration = 2}) end
+            if Lib.AutoGrabGun then Lib.AutoGrabGun() end
         end,
     })
 
     -- [[ ⚔️ ONGLET BLADE BALL ]] --
     local TabBlade = Window:CreateTab("⚔️ Blade Ball")
-    TabBlade:CreateSection("Combat & Sniper")
-
     TabBlade:CreateKeybind({
-        Name = "Touche d'Interception (Parry)",
+        Name = "Touche Parry",
         CurrentKeybind = "F",
         HoldToInteract = false,
         Flag = "ParryKeybind",
         Callback = function(Keybind)
-            if Keybind and Keybind ~= "" then
-                pcall(function() Lib.ParryKey = Enum.KeyCode[Keybind] end)
-            end
+            if Lib then Lib.ParryKey = Enum.KeyCode[Keybind] end
         end,
     })
 
     TabBlade:CreateToggle({
-        Name = "Auto-Spam Duel (Proximité)",
+        Name = "Auto-Spam Duel",
         CurrentValue = false,
-        Callback = function(v) Lib.ToggleAutoSpam(v) end,
-    })
-
-    TabBlade:CreateSection("Debug")
-
-    TabBlade:CreateButton({
-        Name = "🔍 Vérifier la Balle (Console)",
-        Callback = function()
-            local ball = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls")
-            if ball then print("✅ Balle détectée !") else print("❌ Balle introuvable.") end
+        Callback = function(v) 
+            if Lib.ToggleAutoSpam then Lib.ToggleAutoSpam(v) end 
         end,
     })
 
-    -- [[ 👁️ ONGLET VISUELS ]] --
-    local TabVisual = Window:CreateTab("👁️ Visuels")
-    
-    TabVisual:CreateButton({
-        Name = "Full Bright (Éclairage Max)",
-        Callback = function()
-            local Lighting = game:GetService("Lighting")
-            Lighting.Brightness = 2
-            Lighting.ClockTime = 14
-            Lighting.FogEnd = 999999
-            Lighting.GlobalShadows = false
-        end,
-    })
-
-    -- [[ 🎭 ONGLET FUN & TAILLE ]] --
-    local TabFun = Window:CreateTab("🎭 Fun & Taille")
-    TabFun:CreateSection("Manipulateur de Corps")
-
+    -- [[ 🎭 ONGLET FUN ]] --
+    local TabFun = Window:CreateTab("🎭 Fun")
     TabFun:CreateSlider({
         Name = "Taille du personnage",
         Range = {0.1, 10},
         Increment = 0.1,
         CurrentValue = 1,
-        Callback = function(Value) Lib.ChangeSize(Value) end,
-    })
-
-    TabFun:CreateButton({
-        Name = "Devenir GÉANT (x3)",
-        Callback = function() Lib.ChangeSize(3) end,
-    })
-
-    TabFun:CreateButton({
-        Name = "Devenir MINUSCULE (x0.3)",
-        Callback = function() Lib.ChangeSize(0.3) end,
-    })
-
-    -- [[ 💞 ONGLET SOCIAL ]] --
-    local TabSocial = Window:CreateTab("💞 Social")
-
-    TabSocial:CreateToggle({
-        Name = "Regard Auto (Look At Player)",
-        CurrentValue = false,
-        Callback = function(v) Lib.ToggleLookAt(v) end,
-    })
-
-    TabSocial:CreateButton({
-        Name = "Activer Chat Spy (Console F9)",
-        Callback = function() Lib.ChatSpy() end,
+        Callback = function(Value) 
+            if Lib.ChangeSize then Lib.ChangeSize(Value) end 
+        end,
     })
 
     -- [[ 🔓 ONGLET UNLOCKS ]] --
     local TabUnlock = Window:CreateTab("🔓 Unlocks")
-    TabUnlock:CreateSection("Bypass & Exploits")
-
-    TabUnlock:CreateButton({
-        Name = "🛡️ Supprimer Zones Kill/VIP",
-        Callback = function() Lib.BypassTouch() end,
-    })
-
-    TabUnlock:CreateButton({
-        Name = "🎁 Tenter Give Items (Remotes)",
-        Callback = function() Lib.GetRemoteTools() end,
-    })
-
     TabUnlock:CreateButton({
         Name = "🚀 Lancer Infinite Yield",
         Callback = function()
@@ -190,25 +137,35 @@ function UI.Init(Lib)
         end,
     })
 
-    -- [[ 🛡️ LOGIQUE DE PERSISTANCE ]] --
+    -- [[ 🛡️ LOGIQUE DE PERSISTANCE & SÉCURITÉ ]] --
     local LP = game:GetService("Players").LocalPlayer
     
+    -- Anti-Reset de la vitesse lors du respawn
     LP.CharacterAdded:Connect(function(Character)
-        local Humanoid = Character:WaitForChild("Humanoid", 5)
-        if Humanoid then
-            task.wait(1)
-            Lib.SetSpeed(Lib.WalkSpeed)
+        task.wait(1)
+        if Lib.SetSpeed then Lib.SetSpeed(Lib.WalkSpeed) end
+    end)
+
+    -- Boucle de vérification (évite les nil errors)
+    task.spawn(function()
+        while task.wait(1) do
+            pcall(function()
+                if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+                    local hum = LP.Character.Humanoid
+                    if Lib.WalkSpeed and hum.WalkSpeed ~= Lib.WalkSpeed then 
+                        hum.WalkSpeed = Lib.WalkSpeed 
+                    end
+                end
+            end)
         end
     end)
 
-    task.spawn(function()
-        while task.wait(2) do
-            if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-                local hum = LP.Character.Humanoid
-                if hum.WalkSpeed ~= Lib.WalkSpeed then hum.WalkSpeed = Lib.WalkSpeed end
-            end
-        end
-    end)
+    Rayfield:Notify({
+        Title = "SYSTÈME CHARGÉ",
+        Content = "L'interface est prête !",
+        Duration = 3,
+        Image = 4483362458,
+    })
 
     return Window
 end
