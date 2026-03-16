@@ -10,7 +10,7 @@ Functions.Flying = false
 Functions.Noclip = false
 Functions.InfJump = false
 Functions.SavedPosition = nil
-Functions.ParryKey = Enum.KeyCode.F
+Functions.ParryKey = "F" -- MODIFICATION : On utilise du texte "F" au lieu de l'Enum
 Functions.SilentAim = false
 Functions.AutoSpam = false
 Functions.RoleESP = false
@@ -134,11 +134,10 @@ end)
 
 -- Events
 UIS.InputBegan:Connect(function(i, p)
-    if not p then 
-        -- On transforme ParryKey en Enum seulement au moment du clic
-        local targetKey = (type(Functions.ParryKey) == "string") and Enum.KeyCode[Functions.ParryKey] or Functions.ParryKey
-        
-        if i.KeyCode == targetKey then 
+    if not p then
+        -- On convertit le texte en KeyCode seulement lors de l'appui
+        local keyToDetect = Enum.KeyCode[Functions.ParryKey]
+        if i.KeyCode == keyToDetect then 
             Functions.RemoteParry() 
         end
     end

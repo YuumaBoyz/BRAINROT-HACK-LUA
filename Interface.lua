@@ -101,13 +101,17 @@ function UI.Init(Lib)
 
     -- [[ ⚔️ BLADE BALL ]] --
     local TabBlade = Window:CreateTab("⚔️ Blade Ball")
+    
+    -- CORRECTIF ICI : On passe la touche en TEXTE simple
     TabBlade:CreateKeybind({
         Name = "Touche Parry",
         CurrentKeybind = "F",
         HoldToInteract = false,
         Flag = "ParryKeybind",
         Callback = function(Keybind)
-            if Lib then Lib.ParryKey = Enum.KeyCode[Keybind] end
+            if Lib then 
+                Lib.ParryKey = Keybind -- On envoie juste "F" (string)
+            end
         end,
     })
 
@@ -127,30 +131,6 @@ function UI.Init(Lib)
             loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
         end,
     })
-
-    -- [[ 🛡️ LOGIQUE DE PERSISTANCE ]] --
-    local LP = game:GetService("Players").LocalPlayer
-    
-    -- Réactivation après mort
-    LP.CharacterAdded:Connect(function(Character)
-        task.wait(1.5) -- Délai pour laisser le perso charger
-        if Lib and Lib.SetSpeed then Lib.SetSpeed(Lib.WalkSpeed) end
-        if Lib and Lib.SetJump then Lib.SetJump(Lib.JumpPower) end
-    end)
-
-    -- Boucle anti-reset serveur (silencieuse)
-    task.spawn(function()
-        while task.wait(2) do
-            pcall(function()
-                if LP.Character and LP.Character:FindFirstChild("Humanoid") and Lib then
-                    local hum = LP.Character.Humanoid
-                    if hum.WalkSpeed ~= Lib.WalkSpeed then 
-                        hum.WalkSpeed = Lib.WalkSpeed 
-                    end
-                end
-            end)
-        end
-    end)
 
     Rayfield:Notify({
         Title = "SYSTÈME CHARGÉ",
