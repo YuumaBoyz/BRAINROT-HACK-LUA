@@ -4,7 +4,7 @@ local Functions = {}
 -- [[ ⚙️ CONFIGURATION & VARIABLES ]] --
 Functions.FlySpeed = 60
 Functions.WalkSpeed = 16
-Functions.JumpPower = 50
+Functions.JumpPower = 20
 Functions.TPSpeed = 150
 Functions.Flying = false
 Functions.Noclip = false
