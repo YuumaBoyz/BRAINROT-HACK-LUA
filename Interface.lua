@@ -9,9 +9,9 @@ function UI.Init(Lib)
         SubTitle = "by Expert Scripter",
         TabWidth = 160,
         Size = UDim2.fromOffset(580, 460),
-        Acrylic = true, -- Effet de flou derrière le menu
+        Acrylic = true, 
         Theme = "Dark",
-        MinimizeKey = Enum.KeyCode.RightControl -- Touche pour cacher le menu
+        MinimizeKey = Enum.KeyCode.RightControl 
     })
 
     -- Création des Onglets
@@ -21,8 +21,13 @@ function UI.Init(Lib)
         Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
     }
 
-    -- [[ ONGLET PRINCIPAL : COLLECTE & VOL ]] --
+    -- [[ 🏠 ONGLET PRINCIPAL : COLLECTE & VOL ]] --
     
+    Tabs.Main:AddParagraph({
+        Title = "Mouvement & Collecte",
+        Content = "Gère ton vol et le vol automatique des Brainrots."
+    })
+
     -- Toggle pour le FLY
     local FlyToggle = Tabs.Main:AddToggle("FlyToggle", {Title = "Enable Fly", Default = false })
     FlyToggle:OnChanged(function()
@@ -31,7 +36,7 @@ function UI.Init(Lib)
     end)
 
     -- Slider pour la vitesse de vol
-    local FlySlider = Tabs.Main:AddSlider("FlySpeed", {
+    Tabs.Main:AddSlider("FlySpeed", {
         Title = "Fly Speed",
         Description = "Ajuste la vitesse de vol",
         Default = 50,
@@ -47,20 +52,40 @@ function UI.Init(Lib)
     local StealToggle = Tabs.Main:AddToggle("StealToggle", {Title = "Auto-Steal Brainrots", Default = false })
     StealToggle:OnChanged(function()
         Lib.AutoSteal = StealToggle.Value
-        -- La boucle est gérée dans le Main.lua
     end)
 
-    -- [[ ONGLET COMBAT : KILL AURA ]] --
+    Tabs.Main:AddDivider()
 
-    local KillToggle = Tabs.Combat:AddToggle("KillToggle", {Title = "Kill Aura", Default = false })
+    -- BOUTON GIVE ALL ITEMS 🎁
+    Tabs.Main:AddButton({
+        Title = "Give All Items",
+        Description = "Tente de récupérer tous les outils du stockage",
+        Callback = function()
+            Lib.GiveAllItems()
+            Fluent:Notify({
+                Title = "Inventaire",
+                Content = "Tentative de récupération terminée !",
+                Duration = 3
+            })
+        end
+    })
+
+    -- [[ ⚔️ ONGLET COMBAT : KILL AURA ]] --
+
+    Tabs.Combat:AddParagraph({
+        Title = "Combat System",
+        Content = "Active la Fling Aura pour éjecter les joueurs."
+    })
+
+    local KillToggle = Tabs.Combat:AddToggle("KillToggle", {Title = "Fling Aura (Kill)", Default = false })
     KillToggle:OnChanged(function()
         Lib.KillAura = KillToggle.Value
     end)
 
-    local KillRadius = Tabs.Combat:AddSlider("KillRadius", {
+    Tabs.Combat:AddSlider("KillRadius", {
         Title = "Kill Range",
-        Description = "Distance de frappe",
-        Default = 20,
+        Description = "Distance de détection des cibles",
+        Default = 25,
         Min = 5,
         Max = 100,
         Rounding = 1,
@@ -69,10 +94,20 @@ function UI.Init(Lib)
         end
     })
 
+    -- [[ ⚙️ ONGLET PARAMÈTRES ]] --
+    
+    Tabs.Settings:AddButton({
+        Title = "Destroy UI",
+        Description = "Ferme proprement le menu",
+        Callback = function()
+            Window:Destroy()
+        end
+    })
+
     -- Notification de lancement
     Fluent:Notify({
         Title = "Brainrot Hub",
-        Content = "Interface Fluent chargée avec succès !",
+        Content = "Interface Fluent chargée avec succès ! (R-CTRL pour cacher)",
         Duration = 5
     })
 
