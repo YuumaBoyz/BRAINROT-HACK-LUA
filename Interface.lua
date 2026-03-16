@@ -70,6 +70,32 @@ function UI.Init(Lib)
         end
     })
 
+    Tabs.Main:AddDivider()
+
+    -- [[ 🔒 SÉCURITÉ DE LA BASE ]] --
+    
+    Tabs.Main:AddParagraph({
+        Title = "Sécurité",
+        Content = "Protège ta base des intrus de façon permanente."
+    })
+
+    local BarrierToggle = Tabs.Main:AddToggle("BarrierToggle", {
+        Title = "Permanent Red Barrier 🔒", 
+        Default = false 
+    })
+
+    BarrierToggle:OnChanged(function()
+        Lib.PermanentBarrier = BarrierToggle.Value
+        if Lib.PermanentBarrier then
+            Lib.LockMyBarrier()
+            Fluent:Notify({
+                Title = "Base Security",
+                Content = "Barrière verrouillée en mode permanent !",
+                Duration = 3
+            })
+        end
+    end)
+
     -- [[ ⚔️ ONGLET COMBAT : KILL AURA ]] --
 
     Tabs.Combat:AddParagraph({

@@ -1,14 +1,13 @@
 -- [[ BRAINROT HUB - MAIN EXECUTION ]] --
--- Fusion totale : Sécurité, Modularité et Combat (Fling)
+-- Fusion totale : Sécurité, Modularité, Combat & Auto-Bypass
 -- Auteur : Expert Scripting
 
 -- 1. Attendre le chargement complet du jeu
-repeat task.wait() until game:IsLoaded()
+if not game:IsLoaded() then game.Loaded:Wait() end
 
 -- [[ CONFIGURATION DES SOURCES ]] --
--- ⚠️ Remplace par tes liens "Raw" (GitHub ou Pastebin)
-local URL_FUNCTIONS = "https://pastebin.com/raw/TON_LIEN_FONCTIONS"
-local URL_INTERFACE = "https://pastebin.com/raw/TON_LIEN_INTERFACE"
+local URL_FUNCTIONS = "https://raw.githubusercontent.com/YuumaBoyz/BRAINROT-HACK-LUA/main/FunctionsModule.lua"
+local URL_INTERFACE = "https://raw.githubusercontent.com/YuumaBoyz/BRAINROT-HACK-LUA/main/Interface.lua"
 
 -- [[ SERVICES & RÉFÉRENCES ]] --
 local Players = game:GetService("Players")
@@ -23,7 +22,7 @@ local function SafeLoad(name, url)
         print("✅ [" .. name .. "] : Chargé avec succès.")
         return result
     else
-        warn("❌ [" .. name .. "] : Erreur -> " .. tostring(result))
+        warn("❌ [" .. name .. "] : Erreur de téléchargement -> " .. tostring(result))
         return nil
     end
 end
@@ -34,45 +33,31 @@ local Lib = SafeLoad("Logic", URL_FUNCTIONS)
 local UI = SafeLoad("UI", URL_INTERFACE)
 
 if not Lib or not UI then
-    return warn("⛔ Échec critique : Impossible de charger les composants.")
+    return warn("⛔ ÉCHEC CRITIQUE : Impossible de charger les composants distants.")
 end
 
--- [[ INITIALISATION DE L'INTERFACE ]] --
--- Si tu utilises Fluent, appelle UI.Init(Lib), sinon UI.CreateMain()
-local Window, FlyBtn, StealBtn, KillBtn = UI.Init(Lib) 
+-- [[ 🛡️ ACTIVATION DES SYSTÈMES DE BASE ]] --
+Lib.EnableAntiAFK() -- Protection contre la déconnexion immédiate
+Lib.ResetPhysics()  -- Nettoyage initial de la physique
 
--- [[ CONNEXION : LOGIQUE DE VOL (FLY) ]] --
-if FlyBtn then
-    FlyBtn.MouseButton1Click:Connect(function()
-        Lib.Flying = not Lib.Flying
-        FlyBtn.Text = Lib.Flying and "FLY : ON" or "FLY : OFF"
-        FlyBtn.BackgroundColor3 = Lib.Flying and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-        Lib.ToggleFly(Lib.Flying)
-    end)
-end
+-- [[ 🖥️ INITIALISATION DE L'INTERFACE ]] --
+-- On récupère les éléments de l'UI pour garder la compatibilité si besoin
+local Window, FlyToggle, StealToggle, KillToggle = UI.Init(Lib) 
 
--- [[ CONNEXION : LOGIQUE DE COMBAT (FLING AURA) ]] --
-if KillBtn then
-    KillBtn.MouseButton1Click:Connect(function()
-        Lib.KillAura = not Lib.KillAura
-        KillBtn.Text = Lib.KillAura and "FLING AURA : ON" or "FLING AURA : OFF"
-        KillBtn.BackgroundColor3 = Lib.KillAura and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(150, 0, 0)
-    end)
-end
-
--- [[ BOUCLE ASYNCHRONE : FLING AURA ]] --
+-- [[ 🌪️ BOUCLE ASYNCHRONE : FLING AURA (COMBAT) ]] --
 task.spawn(function()
     while task.wait(0.1) do
         if Lib.KillAura then
             local Target = Lib.GetClosestPlayer()
             if Target then
-                Lib.Fling(Target) -- Exécution de la propulsion physique
+                Lib.Fling(Target)   -- Exécution de la propulsion
+                Lib.ResetPhysics()  -- 🟢 BYPASS : Empêche le kick après le choc
             end
         end
     end
 end)
 
--- [[ BOUCLE ASYNCHRONE : AUTO-STEAL ]] --
+-- [[ 💰 BOUCLE ASYNCHRONE : AUTO-STEAL (FARM) ]] --
 task.spawn(function()
     while task.wait(0.05) do
         if Lib.AutoSteal then
@@ -80,12 +65,23 @@ task.spawn(function()
             local Character = LocalPlayer.Character
             if Target and Character and Character:FindFirstChild("HumanoidRootPart") then
                 local HRP = Character.HumanoidRootPart
-                -- Téléportation flash pour collecter
+                -- Téléportation flash
                 HRP.CFrame = Target.CFrame * CFrame.new(0, 2, 0)
+                Lib.ResetPhysics() -- 🟢 BYPASS : Stabilise le perso après le TP
                 task.wait(0.15)
             end
         end
     end
 end)
 
-print("🔥 TOUT EST OPÉRATIONNEL ! Amuse-toi bien sur Steal a Brainrot.")
+-- [[ 🔒 BOUCLE ASYNCHRONE : BASE SECURITY ]] --
+task.spawn(function()
+    while task.wait(1.5) do
+        if Lib.PermanentBarrier then
+            Lib.LockMyBarrier() -- Force la fermeture de ta barrière
+        end
+    end
+end)
+
+print("🔥 BRAINROT HUB v3 : TOUT EST OPÉRATIONNEL !")
+print("💡 Rappel : Utilise R-CTRL pour masquer l'interface.")
