@@ -126,27 +126,22 @@ end
 
 -- [[ ⚔️ BLADE BALL : REMOTE SNIPER ]] --
 function Functions.RemoteParry()
-    local ball = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls")
+    -- On cherche la balle dans tous les dossiers possibles
+    local ball = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls") or workspace.CurrentBall:FindFirstChildOfClass("Part")
     
     if ball then
         local rStorage = game:GetService("ReplicatedStorage")
-        -- Recherche multi-remotes pour compatibilité
+        -- Recherche ultra-large des Remotes (Blade Ball change souvent les noms)
         local parryRemote = rStorage:FindFirstChild("Remotes") and rStorage.Remotes:FindFirstChild("Parry") 
                             or rStorage:FindFirstChild("ParryAttempt") 
                             or rStorage:FindFirstChild("Parry")
+                            or rStorage:FindFirstChild("GeneralAbility") -- Nouvelle variante
 
         if parryRemote then
-            parryRemote:FireServer(ball.Position) 
-            print("🎯 Remote Sniper : Balle interceptée !")
-            
-            -- Effet visuel
-            local highlight = Instance.new("SelectionBox")
-            highlight.Adornee = ball
-            highlight.Color3 = Color3.fromRGB(0, 255, 0)
-            highlight.Parent = ball
-            task.delay(0.3, function() if highlight then highlight:Destroy() end end)
+            parryRemote:FireServer(ball.Position, ball.CFrame) 
+            print("🎯 Parry exécuté !")
         else
-            warn("❌ Remote de Parry introuvable !")
+            warn("❌ Aucune Remote de Parry valide trouvée dans ReplicatedStorage !")
         end
     end
 end

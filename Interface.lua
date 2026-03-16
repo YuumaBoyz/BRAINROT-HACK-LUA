@@ -109,7 +109,14 @@ function UI.Init(Lib)
         HoldToInteract = false,
         Flag = "ParryKeybind",
         Callback = function(Keybind)
-            Lib.ParryKey = Enum.KeyCode[Keybind]
+            -- Sécurité : On vérifie que Keybind n'est pas vide
+            if Keybind and Keybind ~= "" then
+                -- On protège l'appel pour éviter le crash si la touche est spéciale
+                pcall(function()
+                    Lib.ParryKey = Enum.KeyCode[Keybind]
+                    print("⌨️ Nouvelle touche Parry : " .. Keybind)
+                end)
+            end
         end,
     })
 
