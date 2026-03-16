@@ -8,6 +8,7 @@ Functions.Noclip = false
 Functions.InfJump = false
 
 local LP = game:GetService("Players").LocalPlayer
+local NoclipConnection = nil
 
 function Functions.SetSpeed(value)
     Functions.WalkSpeed = value
@@ -55,15 +56,24 @@ end
 
 function Functions.ToggleNoclip(state)
     Functions.Noclip = state
-    game:GetService("RunService").Stepped:Connect(function()
-        if Functions.Noclip and LP.Character then
-            for _, part in pairs(LP.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
+    if Functions.Noclip then
+        if not NoclipConnection then
+            NoclipConnection = game:GetService("RunService").Stepped:Connect(function()
+                if Functions.Noclip and LP.Character then
+                    for _, part in pairs(LP.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                else
+                    if NoclipConnection then
+                        NoclipConnection:Disconnect()
+                        NoclipConnection = nil
+                    end
                 end
-            end
+            end)
         end
-    end)
+    end
 end
 
 game:GetService("UserInputService").JumpRequest:Connect(function()
