@@ -31,13 +31,11 @@ local function GetHum()
     return LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 end
 
--- Fonction pour trouver la balle réelle (Partie physique)
 local function GetBall()
-    local ballFolder = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls") or workspace:FindFirstChild("CurrentBall")
-    if ballFolder then
-        if ballFolder:IsA("BasePart") then return ballFolder end
-        local realBall = ballFolder:FindFirstChildOfClass("BasePart")
-        return realBall
+    local names = {"Ball", "Balls", "CurrentBall", "Volleyball"}
+    for _, name in pairs(names) do
+        local b = workspace:FindFirstChild(name, true)
+        if b and b:IsA("BasePart") then return b end
     end
     return nil
 end
@@ -200,7 +198,6 @@ end
 
 -- [[ ⚔️ BLADE BALL ]] --
 
--- Fonction 1 : Parade classique
 function Functions.RemoteParry()
     local ball = GetBall()
     local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Parry", true)
@@ -209,15 +206,11 @@ function Functions.RemoteParry()
     end
 end
 
--- Fonction 2 : Boost de vitesse (Indépendant)
 function Functions.ApplyBallBoost()
     if not Functions.BallBoost then return end
     local ball = GetBall()
     if ball then
-        pcall(function()
-            -- Injection de vélocité
-            ball.AssemblyLinearVelocity = ball.AssemblyLinearVelocity * Functions.BoostMultiplier
-        end)
+        pcall(function() ball.AssemblyLinearVelocity *= Functions.BoostMultiplier end)
     end
 end
 
@@ -241,6 +234,17 @@ task.spawn(function()
         if Functions.AutoSpam then 
             Functions.RemoteParry() 
             if Functions.BallBoost then Functions.ApplyBallBoost() end
+        end
+    end
+end)
+
+-- [[ 🛠️ SÉCURITÉ ANTI-BUG SPRINT ]] --
+RunService.Heartbeat:Connect(function()
+    local hum = GetHum()
+    if hum and Functions.WalkSpeed > 16 then
+        -- On force la vitesse à chaque frame pour contrer les scripts du jeu
+        if hum.WalkSpeed ~= Functions.WalkSpeed then
+            hum.WalkSpeed = Functions.WalkSpeed
         end
     end
 end)
