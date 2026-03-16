@@ -1,6 +1,5 @@
 local Functions = {}
 
--- [[ 📊 VARIABLES D'ÉTAT ]] --
 Functions.FlySpeed = 50
 Functions.WalkSpeed = 16
 Functions.JumpPower = 50
@@ -9,8 +8,6 @@ Functions.Noclip = false
 Functions.InfJump = false
 
 local LP = game:GetService("Players").LocalPlayer
-
--- [[ 🏃 MOUVEMENT DE BASE ]] --
 
 function Functions.SetSpeed(value)
     Functions.WalkSpeed = value
@@ -26,8 +23,6 @@ function Functions.SetJump(value)
         LP.Character.Humanoid.UseJumpPower = true 
     end
 end
-
--- [[ 🚀 TRICHE AVANCÉE ]] --
 
 function Functions.ToggleFly(state)
     Functions.Flying = state
@@ -60,9 +55,7 @@ end
 
 function Functions.ToggleNoclip(state)
     Functions.Noclip = state
-    local RunService = game:GetService("RunService")
-    
-    local function noclipLoop()
+    game:GetService("RunService").Stepped:Connect(function()
         if Functions.Noclip and LP.Character then
             for _, part in pairs(LP.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
@@ -70,39 +63,26 @@ function Functions.ToggleNoclip(state)
                 end
             end
         end
-    end
-    RunService.Stepped:Connect(noclipLoop)
+    end)
 end
 
--- INFINITE JUMP
 game:GetService("UserInputService").JumpRequest:Connect(function()
     if Functions.InfJump and LP.Character and LP.Character:FindFirstChild("Humanoid") then
         LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
--- [[ 🎭 MANIPULATION D'APPARENCE ]] --
-
 function Functions.ChangeSize(modifier)
     local Char = LP.Character
     if Char and Char:FindFirstChild("Humanoid") then
         local Hum = Char.Humanoid
-        local Scales = {
-            "BodyHeightScale",
-            "BodyWidthScale",
-            "BodyDepthScale",
-            "HeadScale"
-        }
+        local Scales = {"BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale"}
         for _, scaleName in pairs(Scales) do
-            local scaleValue = Hum:FindFirstChild(scaleName)
-            if scaleValue then
-                scaleValue.Value = modifier
-            end
+            local sV = Hum:FindFirstChild(scaleName)
+            if sV then sV.Value = modifier end
         end
     end
 end
-
--- [[ 🛡️ SYSTÈMES ]] --
 
 function Functions.EnableAntiAFK()
     local VU = game:GetService("VirtualUser")
