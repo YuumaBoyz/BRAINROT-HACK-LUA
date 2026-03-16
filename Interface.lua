@@ -3,7 +3,7 @@ local UI = {}
 function UI.Init(Lib)
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     local Window = Rayfield:CreateWindow({
-        Name = "🌐 UNIVERSAL HUB v6.7",
+        Name = "🌐 UNIVERSAL HUB v6.8",
         LoadingTitle = "Initialisation du Multi-Tool...",
         LoadingSubtitle = "par YuumaBoyz",
         ConfigurationSaving = {
@@ -62,13 +62,26 @@ function UI.Init(Lib)
     TabMM2:CreateToggle({
         Name = "Role ESP (Vision à travers murs)",
         CurrentValue = false,
-        Callback = function(v) Lib.ToggleRoleESP(v) end,
+        Callback = function(v) 
+            if Lib and Lib.ToggleRoleESP then
+                Lib.ToggleRoleESP(v)
+            else
+                warn("⚠️ Lib.ToggleRoleESP n'est pas prêt !")
+            end
+        end,
     })
 
     TabMM2:CreateToggle({
         Name = "Silent Aim (Shoot/Throw Bot)",
         CurrentValue = false,
-        Callback = function(v) Lib.ToggleSilentAim(v) end,
+        Callback = function(v) 
+            -- Sécurité anti-nil pour éviter le Callback Error
+            if Lib and Lib.ToggleSilentAim then
+                Lib.ToggleSilentAim(v) 
+            else
+                warn("⚠️ Lib.ToggleSilentAim n'est pas encore chargé !")
+            end
+        end,
     })
 
     TabMM2:CreateSection("Utilitaires")
@@ -76,11 +89,12 @@ function UI.Init(Lib)
     TabMM2:CreateButton({
         Name = "🔫 Auto-Grab Gun (TP au pistolet)",
         Callback = function() 
-            local drop = workspace:FindFirstChild("GunDrop")
-            if drop and Lib.LP.Character then
-                Lib.LP.Character.HumanoidRootPart.CFrame = drop.CFrame
+            -- On appelle la fonction de la Lib au lieu de faire le code ici
+            if Lib and Lib.AutoGrabGun then
+                Lib.AutoGrabGun()
             else
-                Rayfield:Notify({Title = "MM2", Content = "Le pistolet n'est pas au sol !", Duration = 2})
+                -- Secours si la Lib bug
+                Rayfield:Notify({Title = "Erreur", Content = "Fonction non chargée", Duration = 2})
             end
         end,
     })

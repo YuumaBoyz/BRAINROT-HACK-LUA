@@ -290,27 +290,64 @@ end
 
 -- Hook pour rediriger l'attaque
 function Functions.ToggleSilentAim(state)
+    -- Sécurité : Si state est nil, on s'arrête
+    if state == nil then return end
+    
     Functions.SilentAim = state
     print("🎯 Silent Aim : " .. (state and "ACTIVÉ" or "DÉSACTIVÉ"))
     
     if state then
-        -- Hook du Namecall pour rediriger les balles/couteaux
-        local oldNamecall
-        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-            local args = {...}
-            local method = getnamecallmethod()
-            
-            if Functions.SilentAim and method == "FireServer" then
-                if self.Name == "Shoot" or self.Name == "Throw" then
-                    local target = Functions.GetSilentTarget()
-                    if target then
-                        args[1] = target.Position -- On force la destination sur la cible
-                        return oldNamecall(self, table.unpack(args))
+        -- On utilise task.spawn pour ne pas bloquer le reste du chargement
+        task.spawn(function()
+            local oldNamecall
+            oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+                local args = {...}
+                local method = getnamecallmethod()
+                
+                -- Vérification que le SilentAim est toujours actif
+                if Functions.SilentAim and method == "FireServer" then
+                    if self.Name == "Shoot" or self.Name == "Throw" then
+                        local target = Functions.GetSilentTarget()
+                        if target then
+                            args[1] = target.Position
+                            return oldNamecall(self, table.unpack(args))
+                        end
                     end
                 end
-            end
-            return oldNamecall(self, ...)
+                return oldNamecall(self, ...)
+            end)
         end)
+    end
+end
+
+function Functions.AutoGrabGun()
+    local drop = workspace:FindFirstChild("GunDrop")
+    if drop and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        local Root = LP.Character.HumanoidRootPart
+        local oldPos = Root.CFrame
+        
+        print("🔫 Tentative de récupération du pistolet...")
+        
+        -- Désactive momentanément le Noclip pour être sûr de toucher l'objet
+        local wasNoclip = Functions.Noclip
+        Functions.ToggleNoclip(true)
+
+        -- Boucle de récupération (on reste sur l'arme jusqu'à ce qu'elle disparaisse du sol)
+        local timeout = 0
+        repeat
+            Root.CFrame = drop.CFrame * CFrame.new(0, 1, 0) -- On se TP légèrement au-dessus
+            task.wait(0.1)
+            timeout = timeout + 1
+        until not workspace:FindFirstChild("GunDrop") or timeout > 10
+        
+        -- On revient à la position de départ (optionnel, enlève si tu veux rester là-bas)
+        -- Root.CFrame = oldPos
+        
+        Functions.ToggleNoclip(wasNoclip)
+        print("✅ Pistolet récupéré !")
+    else
+        -- Si l'UI a besoin d'une notification, elle sera gérée dans le UI.lua
+        warn("❌ Le pistolet n'est pas au sol !")
     end
 end
 
