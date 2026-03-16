@@ -134,7 +134,14 @@ end)
 
 -- Events
 UIS.InputBegan:Connect(function(i, p)
-    if not p and i.KeyCode == Functions.ParryKey then Functions.RemoteParry() end
+    if not p then 
+        -- On transforme ParryKey en Enum seulement au moment du clic
+        local targetKey = (type(Functions.ParryKey) == "string") and Enum.KeyCode[Functions.ParryKey] or Functions.ParryKey
+        
+        if i.KeyCode == targetKey then 
+            Functions.RemoteParry() 
+        end
+    end
 end)
 
 return Functions
