@@ -4,13 +4,15 @@ local Functions = {}
 Functions.FlySpeed = 60
 Functions.WalkSpeed = 16
 Functions.JumpPower = 50
-Functions.TPSpeed = 150 -- Vitesse du TP (plus c'est bas, plus c'est discret)
+Functions.TPSpeed = 150
 Functions.Flying = false
 Functions.Noclip = false
 Functions.InfJump = false
 Functions.SavedPosition = nil
 Functions.LookAtEnabled = false
-Functions.ParryKey = Enum.KeyCode.F -- Touche pour Blade Ball
+Functions.ParryKey = Enum.KeyCode.F
+Functions.SilentAim = false
+Functions.AutoSpam = false
 
 local LP = game:GetService("Players").LocalPlayer
 local NoclipConnection = nil
@@ -39,12 +41,9 @@ function Functions.ToggleFly(state)
     local Root = Char.HumanoidRootPart
 
     if Functions.Flying then
-        -- Nettoyage si un ancien Fly existe
         if Root:FindFirstChild("UniversalFly") then Root.UniversalFly:Destroy() end
-        
-        local BV = Instance.new("BodyVelocity")
+        local BV = Instance.new("BodyVelocity", Root)
         BV.Name = "UniversalFly"
-        BV.Parent = Root
         BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         BV.Velocity = Vector3.new(0,0,0)
 
@@ -75,10 +74,7 @@ function Functions.ToggleNoclip(state)
                         if part:IsA("BasePart") then part.CanCollide = false end
                     end
                 else
-                    if NoclipConnection then
-                        NoclipConnection:Disconnect()
-                        NoclipConnection = nil
-                    end
+                    if NoclipConnection then NoclipConnection:Disconnect() NoclipConnection = nil end
                 end
             end)
         end
@@ -94,220 +90,99 @@ function Functions.SetTPPoint()
 end
 
 function Functions.GoToTPPoint()
-    local Char = LP.Character
-    if Char and Char:FindFirstChild("HumanoidRootPart") and Functions.SavedPosition then
-        local Root = Char.HumanoidRootPart
-        local targetCFrame = Functions.SavedPosition
-        
-        -- On calcule la distance
-        local distance = (Root.Position - targetCFrame.Position).Magnitude
-        
-        -- Si on est à plus de 500 studs, on fait un petit saut intermédiaire pour éviter les bugs
+    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and Functions.SavedPosition then
+        local Root = LP.Character.HumanoidRootPart
+        local dist = (Root.Position - Functions.SavedPosition.Position).Magnitude
         task.spawn(function()
-            print("🚀 Déplacement Stealth en cours...")
-            local tweenService = game:GetService("TweenService")
-            local info = TweenInfo.new(distance / Functions.TPSpeed, Enum.EasingStyle.Linear)
-            local tween = tweenService:Create(Root, info, {CFrame = targetCFrame})
-            
-            -- On active le Noclip pendant le TP pour ne pas rester bloqué dans un mur
+            local tween = game:GetService("TweenService"):Create(Root, TweenInfo.new(dist / Functions.TPSpeed, Enum.EasingStyle.Linear), {CFrame = Functions.SavedPosition})
             local oldNoclip = Functions.Noclip
             Functions.ToggleNoclip(true)
-            
             tween:Play()
             tween.Completed:Wait()
-            
             Functions.ToggleNoclip(oldNoclip)
-            print("✅ Arrivé à destination !")
         end)
-    else
-        warn("❌ Aucun point enregistré ou personnage introuvable !")
     end
 end
 
--- [[ ⚔️ BLADE BALL : REMOTE SNIPER ]] --
+-- [[ ⚔️ BLADE BALL ]] --
 function Functions.RemoteParry()
-    -- On cherche la balle dans tous les dossiers possibles
-    local ball = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls") or workspace.CurrentBall:FindFirstChildOfClass("Part")
-    
+    local ball = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("Balls") or (workspace:FindFirstChild("CurrentBall") and workspace.CurrentBall:FindFirstChildOfClass("Part"))
     if ball then
         local rStorage = game:GetService("ReplicatedStorage")
-        -- Recherche ultra-large des Remotes (Blade Ball change souvent les noms)
         local parryRemote = rStorage:FindFirstChild("Remotes") and rStorage.Remotes:FindFirstChild("Parry") 
                             or rStorage:FindFirstChild("ParryAttempt") 
                             or rStorage:FindFirstChild("Parry")
-                            or rStorage:FindFirstChild("GeneralAbility") -- Nouvelle variante
-
+                            or rStorage:FindFirstChild("GeneralAbility")
         if parryRemote then
-            parryRemote:FireServer(ball.Position, ball.CFrame) 
-            print("🎯 Parry exécuté !")
-        else
-            warn("❌ Aucune Remote de Parry valide trouvée dans ReplicatedStorage !")
+            parryRemote:FireServer(ball.Position, ball.CFrame)
         end
     end
 end
 
--- [[ 🎭 SOCIAL & VISUEL ]] --
-function Functions.ToggleLookAt(state)
-    Functions.LookAtEnabled = state
+function Functions.ToggleAutoSpam(state)
+    Functions.AutoSpam = state
     task.spawn(function()
-        while Functions.LookAtEnabled do
-            local closest, dist = nil, math.huge
-            for _, p in pairs(game.Players:GetPlayers()) do
-                if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    local d = (LP.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                    if d < dist then dist = d closest = p end
-                end
-            end
-            if closest and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                local pos = closest.Character.HumanoidRootPart.Position
-                LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(pos.X, LP.Character.HumanoidRootPart.Position.Y, pos.Z))
-            end
-            task.wait()
+        while Functions.AutoSpam do
+            Functions.RemoteParry()
+            task.wait(0.05)
         end
     end)
 end
 
-function Functions.ChatSpy()
-    print("💬 ChatSpy activé (Console F9)")
-    local ChatEvents = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents", 5)
-    if ChatEvents then
-        ChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
-            print("[" .. tostring(messageData.FromSpeaker) .. "]: " .. tostring(messageData.Message))
-        end)
-    end
-end
-
--- [[ 🔓 UNLOCKS & TAILLE ]] --
-function Functions.BypassTouch()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("TouchTransmitter") then
-            local p = v.Parent.Name:lower()
-            if p:find("vip") or p:find("kill") or p:find("dead") or p:find("death") then 
-                v:Destroy() 
-            end
-        end
-    end
-    print("🛡️ Zones dangereuses/VIP bypassées !")
-end
-
-function Functions.GetRemoteTools()
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") and (v.Name:find("Give") or v.Name:find("Tool") or v.Name:find("Item")) then 
-            v:FireServer() 
-        end
-    end
-    print("🎁 Tentative de Give effectuée !")
-end
-
-function Functions.ChangeSize(modifier)
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        local Hum = LP.Character.Humanoid
-        local Scales = {"BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale"}
-        for _, n in pairs(Scales) do
-            local v = Hum:FindFirstChild(n) or Instance.new("NumberValue", Hum)
-            v.Name = n
-            v.Value = modifier
-        end
-    end
-end
-
--- [[ 👁️ MM2 : ROLE ESP ]] --
+-- [[ 🕵️ MURDER MYSTERY 2 ]] --
 function Functions.ToggleRoleESP(state)
     Functions.RoleESP = state
-    
     task.spawn(function()
         while Functions.RoleESP do
             for _, v in pairs(game.Players:GetPlayers()) do
                 if v ~= LP and v.Character then
-                    -- On cherche ou on crée le Highlight
-                    local highlight = v.Character:FindFirstChild("RoleHighlight") or Instance.new("Highlight")
-                    highlight.Name = "RoleHighlight"
-                    highlight.Parent = v.Character
-                    highlight.FillTransparency = 0.5
-                    highlight.OutlineTransparency = 0
+                    local hl = v.Character:FindFirstChild("RoleHighlight") or Instance.new("Highlight", v.Character)
+                    hl.Name = "RoleHighlight"
+                    local inv = v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")
+                    local gun = v.Backpack:FindFirstChild("Gun") or v.Character:FindFirstChild("Gun")
                     
-                    -- Détection du rôle par l'inventaire
-                    local character = v.Character
-                    local backpack = v.Backpack
+                    if inv then hl.FillColor = Color3.fromRGB(255, 0, 0) -- Murderer
+                    elseif gun then hl.FillColor = Color3.fromRGB(0, 0, 255) -- Sheriff
+                    else hl.FillColor = Color3.fromRGB(0, 255, 0) end -- Innocent
                     
-                    if backpack:FindFirstChild("Knife") or character:FindFirstChild("Knife") then
-                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- 🔪 Meurtrier (Rouge)
-                        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-                    elseif backpack:FindFirstChild("Gun") or character:FindFirstChild("Gun") then
-                        highlight.FillColor = Color3.fromRGB(0, 0, 255) -- 🔫 Sheriff (Bleu)
-                        highlight.OutlineColor = Color3.fromRGB(0, 0, 255)
-                    else
-                        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- 🟢 Innocent (Vert)
-                        highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
-                    end
+                    hl.FillTransparency = 0.5
                 end
             end
-            task.wait(1) -- Rafraîchissement toutes les secondes
+            task.wait(1)
         end
-        
-        -- Nettoyage si on désactive
-        for _, v in pairs(game.Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("RoleHighlight") then
-                v.Character.RoleHighlight:Destroy()
-            end
-        end
+        for _, v in pairs(game.Players:GetPlayers()) do if v.Character and v.Character:FindFirstChild("RoleHighlight") then v.Character.RoleHighlight:Destroy() end end
     end)
 end
 
--- [[ 🎯 MM2 : SILENT AIM ]] --
 function Functions.GetSilentTarget()
-    local target = nil
-    local shortestDist = math.huge
-    local LP = game:GetService("Players").LocalPlayer
-    
-    -- Vérifie si on est Murderer
+    local target, shortestDist = nil, math.huge
     local isMurderer = LP.Backpack:FindFirstChild("Knife") or (LP.Character and LP.Character:FindFirstChild("Knife"))
     
     for _, v in pairs(game.Players:GetPlayers()) do
         if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
             if not isMurderer then
-                -- Si on est Sheriff/Hero : Cible uniquement le Murderer
-                if v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife") then
-                    return v.Character.HumanoidRootPart
-                end
+                -- Sheriff : Cible uniquement le Murderer
+                if v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife") then return v.Character.HumanoidRootPart end
             else
-                -- Si on est Murderer : Cible le plus proche
-                local dist = (v.Character.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
-                if dist < shortestDist then
-                    shortestDist = dist
-                    target = v.Character.HumanoidRootPart
-                end
+                -- Murderer : Cible le plus proche
+                local d = (v.Character.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                if d < shortestDist then shortestDist = d target = v.Character.HumanoidRootPart end
             end
         end
     end
     return target
 end
 
--- Hook pour rediriger l'attaque
 function Functions.ToggleSilentAim(state)
-    -- Sécurité : Si state est nil, on s'arrête
-    if state == nil then return end
-    
     Functions.SilentAim = state
-    print("🎯 Silent Aim : " .. (state and "ACTIVÉ" or "DÉSACTIVÉ"))
-    
     if state then
-        -- On utilise task.spawn pour ne pas bloquer le reste du chargement
         task.spawn(function()
             local oldNamecall
             oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
                 local args = {...}
-                local method = getnamecallmethod()
-                
-                -- Vérification que le SilentAim est toujours actif
-                if Functions.SilentAim and method == "FireServer" then
-                    if self.Name == "Shoot" or self.Name == "Throw" then
-                        local target = Functions.GetSilentTarget()
-                        if target then
-                            args[1] = target.Position
-                            return oldNamecall(self, table.unpack(args))
-                        end
-                    end
+                if Functions.SilentAim and getnamecallmethod() == "FireServer" and (self.Name == "Shoot" or self.Name == "Throw") then
+                    local target = Functions.GetSilentTarget()
+                    if target then args[1] = target.Position return oldNamecall(self, unpack(args)) end
                 end
                 return oldNamecall(self, ...)
             end)
@@ -317,53 +192,40 @@ end
 
 function Functions.AutoGrabGun()
     local drop = workspace:FindFirstChild("GunDrop")
-    if drop and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+    if drop and LP.Character then
         local Root = LP.Character.HumanoidRootPart
-        local oldPos = Root.CFrame
-        
-        print("🔫 Tentative de récupération du pistolet...")
-        
-        -- Désactive momentanément le Noclip pour être sûr de toucher l'objet
         local wasNoclip = Functions.Noclip
         Functions.ToggleNoclip(true)
-
-        -- Boucle de récupération (on reste sur l'arme jusqu'à ce qu'elle disparaisse du sol)
         local timeout = 0
         repeat
-            Root.CFrame = drop.CFrame * CFrame.new(0, 1, 0) -- On se TP légèrement au-dessus
+            Root.CFrame = drop.CFrame * CFrame.new(0, 1, 0)
             task.wait(0.1)
             timeout = timeout + 1
-        until not workspace:FindFirstChild("GunDrop") or timeout > 10
-        
-        -- On revient à la position de départ (optionnel, enlève si tu veux rester là-bas)
-        -- Root.CFrame = oldPos
-        
+        until not workspace:FindFirstChild("GunDrop") or timeout > 20
         Functions.ToggleNoclip(wasNoclip)
-        print("✅ Pistolet récupéré !")
-    else
-        -- Si l'UI a besoin d'une notification, elle sera gérée dans le UI.lua
-        warn("❌ Le pistolet n'est pas au sol !")
     end
 end
 
--- [[ 🛡️ SYSTÈME & EVENTS ]] --
+-- [[ 🎭 AUTRES & SYSTÈME ]] --
+function Functions.ChangeSize(modifier)
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        for _, n in pairs({"BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale"}) do
+            local v = LP.Character.Humanoid:FindFirstChild(n) or Instance.new("NumberValue", LP.Character.Humanoid)
+            v.Name = n v.Value = modifier
+        end
+    end
+end
+
 function Functions.EnableAntiAFK()
     local VU = game:GetService("VirtualUser")
-    LP.Idled:Connect(function() 
-        VU:CaptureController() 
-        VU:ClickButton2(Vector2.new()) 
-    end)
-    print("💤 Anti-AFK activé !")
+    LP.Idled:Connect(function() VU:CaptureController() VU:ClickButton2(Vector2.new()) end)
 end
 
--- Gestion des touches
-game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Functions.ParryKey then
-        Functions.RemoteParry()
-    end
+-- [[ 🛡️ EVENTS ]] --
+game:GetService("UserInputService").InputBegan:Connect(function(i, p)
+    if not p and i.KeyCode == Functions.ParryKey then Functions.RemoteParry() end
 end)
 
--- Saut Infini
 game:GetService("UserInputService").JumpRequest:Connect(function()
     if Functions.InfJump and LP.Character and LP.Character:FindFirstChild("Humanoid") then
         LP.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)

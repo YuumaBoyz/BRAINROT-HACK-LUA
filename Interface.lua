@@ -63,39 +63,27 @@ function UI.Init(Lib)
         Name = "Role ESP (Vision à travers murs)",
         CurrentValue = false,
         Callback = function(v) 
-            if Lib and Lib.ToggleRoleESP then
-                Lib.ToggleRoleESP(v)
-            else
-                warn("⚠️ Lib.ToggleRoleESP n'est pas prêt !")
-            end
+            if Lib and Lib.ToggleRoleESP then Lib.ToggleRoleESP(v) 
+            else warn("⚠️ Lib.ToggleRoleESP non prêt") end
         end,
     })
 
     TabMM2:CreateToggle({
-        Name = "Silent Aim (Shoot/Throw Bot)",
+        Name = "Silent Aim (Sheriff/Murderer Bot)",
         CurrentValue = false,
         Callback = function(v) 
-            -- Sécurité anti-nil pour éviter le Callback Error
-            if Lib and Lib.ToggleSilentAim then
-                Lib.ToggleSilentAim(v) 
-            else
-                warn("⚠️ Lib.ToggleSilentAim n'est pas encore chargé !")
-            end
+            if Lib and Lib.ToggleSilentAim then Lib.ToggleSilentAim(v)
+            else warn("⚠️ Lib.ToggleSilentAim non prêt") end
         end,
     })
 
     TabMM2:CreateSection("Utilitaires")
 
     TabMM2:CreateButton({
-        Name = "🔫 Auto-Grab Gun (TP au pistolet)",
+        Name = "🔫 Auto-Grab Gun (Récupération Rapide)",
         Callback = function() 
-            -- On appelle la fonction de la Lib au lieu de faire le code ici
-            if Lib and Lib.AutoGrabGun then
-                Lib.AutoGrabGun()
-            else
-                -- Secours si la Lib bug
-                Rayfield:Notify({Title = "Erreur", Content = "Fonction non chargée", Duration = 2})
-            end
+            if Lib and Lib.AutoGrabGun then Lib.AutoGrabGun()
+            else Rayfield:Notify({Title = "Erreur", Content = "Fonction non chargée", Duration = 2}) end
         end,
     })
 
@@ -109,13 +97,8 @@ function UI.Init(Lib)
         HoldToInteract = false,
         Flag = "ParryKeybind",
         Callback = function(Keybind)
-            -- Sécurité : On vérifie que Keybind n'est pas vide
             if Keybind and Keybind ~= "" then
-                -- On protège l'appel pour éviter le crash si la touche est spéciale
-                pcall(function()
-                    Lib.ParryKey = Enum.KeyCode[Keybind]
-                    print("⌨️ Nouvelle touche Parry : " .. Keybind)
-                end)
+                pcall(function() Lib.ParryKey = Enum.KeyCode[Keybind] end)
             end
         end,
     })
@@ -124,11 +107,6 @@ function UI.Init(Lib)
         Name = "Auto-Spam Duel (Proximité)",
         CurrentValue = false,
         Callback = function(v) Lib.ToggleAutoSpam(v) end,
-    })
-
-    TabBlade:CreateParagraph({
-        Title = "🚀 Info Technique", 
-        Content = "Le Remote Sniper force le serveur à parer la balle, peu importe la distance, si elle est dirigée vers toi."
     })
 
     TabBlade:CreateSection("Debug")
@@ -159,6 +137,14 @@ function UI.Init(Lib)
     local TabFun = Window:CreateTab("🎭 Fun & Taille")
     TabFun:CreateSection("Manipulateur de Corps")
 
+    TabFun:CreateSlider({
+        Name = "Taille du personnage",
+        Range = {0.1, 10},
+        Increment = 0.1,
+        CurrentValue = 1,
+        Callback = function(Value) Lib.ChangeSize(Value) end,
+    })
+
     TabFun:CreateButton({
         Name = "Devenir GÉANT (x3)",
         Callback = function() Lib.ChangeSize(3) end,
@@ -167,14 +153,6 @@ function UI.Init(Lib)
     TabFun:CreateButton({
         Name = "Devenir MINUSCULE (x0.3)",
         Callback = function() Lib.ChangeSize(0.3) end,
-    })
-
-    TabFun:CreateSlider({
-        Name = "Taille Précise",
-        Range = {0.1, 10},
-        Increment = 0.1,
-        CurrentValue = 1,
-        Callback = function(Value) Lib.ChangeSize(Value) end,
     })
 
     -- [[ 💞 ONGLET SOCIAL ]] --
@@ -212,7 +190,7 @@ function UI.Init(Lib)
         end,
     })
 
-    -- [[ 🛡️ LOGIQUE DE PERSISTANCE & ANTI-RESET ]] --
+    -- [[ 🛡️ LOGIQUE DE PERSISTANCE ]] --
     local LP = game:GetService("Players").LocalPlayer
     
     LP.CharacterAdded:Connect(function(Character)
