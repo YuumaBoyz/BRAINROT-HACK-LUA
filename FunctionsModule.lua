@@ -59,73 +59,52 @@ function Functions.SetJump(value)
 end
 
 -- [[ ⚔️ SYSTÈME DE SCAN PRODIGIEUX (NO COOLDOWN) ]] --
+-- [[ ⚔️ SYSTÈME DE SCAN PRODIGIEUX (NO COOLDOWN) ]] --
 function Functions.ToggleNoCooldown(state)
     Functions.NoCooldown = state
-    
-    if state then
-        task.spawn(function()
-            print("🔍 ***Lancement du scan profond des fichiers...***")
-            
-            -- On utilise getgc (Get Garbage Collector) pour fouiller la mémoire du jeu
-            for _, v in pairs(getgc(true)) do
-                if type(v) == "function" and islclosure(v) then
-                    local name = debug.getinfo(v).name
-                    local constants = debug.getconstants(v)
-                    
-                    -- On cherche des fonctions qui parlent de "Cooldown", "Ability", ou "Reset"
-                    if name and (name:lower():find("cooldown") or name:lower():find("ability")) then
-                        -- On remplace la fonction par une fonction vide qui retourne immédiatement
-                        hookfunction(v, function() return end)
-                    end
-                    
-                    -- Scan des constantes pour trouver les timers cachés
-                    for _, const in pairs(constants) do
-                        if const == "Cooldown" or const == "TickRate" then
-                            -- On force les variables locales du script à 0
-                            debug.setupvalue(v, "Cooldown", 0)
-                            debug.setupvalue(v, "CD", 0)
-                        end
-                    end
-                end
-            end
-            print("✅ ***Scan terminé : Cooldowns neutralisés !***")
-        end)
-    end
-end
-
-function Functions.ToggleCurveSpike(state)
-    Functions.CurveSpike = state
+    if not state then return end
     
     task.spawn(function()
-        while Functions.CurveSpike do
-            local ball = workspace:FindFirstChild("Ball") -- À vérifier selon le jeu
-            if ball and ball.AssemblyLinearVelocity.Magnitude > 30 then
-                -- On vérifie si c'est nous qui venons de frapper
-                local dist = (ball.Position - LP.Character.HumanoidRootPart.Position).Magnitude
-                if dist < 15 then
-                    task.wait(0.1) -- Laisse la balle partir un peu pour l'effet visuel
-                    
-                    -- Détection du contreur le plus proche
-                    for _, p in pairs(game.Players:GetPlayers()) do
-                        if p ~= LP and p.Team ~= LP.Team and p.Character then
-                            local opponentPos = p.Character.HumanoidRootPart.Position
-                            local ballDir = ball.AssemblyLinearVelocity.Unit
-                            local toOpponent = (opponentPos - ball.Position).Unit
-                            
-                            -- Si l'adversaire est sur le chemin (angle faible)
-                            if ballDir:Dot(toOpponent) > 0.8 then 
-                                -- On dévie la trajectoire sur le côté puis vers le bas
-                                local sideSteer = Vector3.new(-ballDir.Z, 0, ballDir.X) -- Perpendiculaire
-                                ball.AssemblyLinearVelocity = (ballDir + sideSteer * 0.5).Unit * ball.AssemblyLinearVelocity.Magnitude
-                                
-                                -- Force de chute pour toucher le sol vite
-                                local force = Instance.new("BodyForce", ball)
-                                force.Force = Vector3.new(0, -5000, 0)
-                                game.Debris:AddItem(force, 0.5)
-                                break
-                            end
+        print("🔍 Scanning Memory...")
+        for _, v in pairs(getgc(true)) do
+            if type(v) == "function" and islclosure(v) and not is_sirius_closure(v) then
+                local info = debug.getinfo(v)
+                local name = info.name or ""
+                
+                -- Neutralisation des fonctions de Cooldown
+                if name:lower():find("cooldown") or name:lower():find("canability") then
+                    hookfunction(v, function() return true end)
+                end
+                
+                -- Tentative de reset des timers via Upvalues (Sécurisé)
+                pcall(function()
+                    for i = 1, 10 do
+                        local n, val = debug.getupvalue(v, i)
+                        if n and (n:lower():find("cd") or n:lower():find("timer")) then
+                            debug.setupvalue(v, i, 0)
                         end
                     end
+                end)
+            end
+        end
+        print("✅ Scan Complete.")
+    end)
+end
+
+-- [[ 🏐 VOLLEYBALL SPECIALS ]] --
+function Functions.ToggleCurveSpike(state)
+    Functions.CurveSpike = state
+    task.spawn(function()
+        while Functions.CurveSpike do
+            local ball = GetBall()
+            if ball and ball.AssemblyLinearVelocity.Magnitude > 20 then
+                local dist = (ball.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                if dist < 12 then -- On vient de frapper
+                    task.wait(0.05)
+                    -- On dévie la balle vers un angle mort
+                    local currentVel = ball.AssemblyLinearVelocity
+                    local curve = Vector3.new(math.random(-15,15), -30, math.random(-15,15))
+                    ball.AssemblyLinearVelocity = currentVel + curve
                 end
             end
             task.wait(0.1)
@@ -138,36 +117,20 @@ function Functions.ToggleSlowMo(state)
     
     RunService.RenderStepped:Connect(function()
         if not Functions.SlowMoActive then return end
-        
-        local ball = workspace:FindFirstChild("Ball")
-        if ball and ball:IsA("BasePart") then
+        local ball = GetBall()
+        if ball then
             local dist = (ball.Position - LP.Character.HumanoidRootPart.Position).Magnitude
-            
-            -- Si la balle est à moins de 20 mètres
-            if dist < 20 then
-                -- On ralentit localement le rendu de la position
-                local shadowBall = ball:FindFirstChild("SlowMoVisual") or Instance.new("Part")
-                if shadowBall.Name ~= "SlowMoVisual" then
-                    shadowBall.Name = "SlowMoVisual"
-                    shadowBall.Size = ball.Size
-                    shadowBall.Shape = ball.Shape
-                    shadowBall.Color = Color3.fromRGB(0, 255, 255)
-                    shadowBall.Material = Enum.Material.Neon
-                    shadowBall.Transparency = 0.6
-                    shadowBall.CanCollide = false
-                    shadowBall.Anchored = true
-                    shadowBall.Parent = workspace
+            if dist < 25 then
+                local shadow = workspace:FindFirstChild("SlowMoVisual") or Instance.new("Part")
+                if shadow.Name ~= "SlowMoVisual" then
+                    shadow.Name = "SlowMoVisual"; shadow.Anchored = true; shadow.CanCollide = false
+                    shadow.Transparency = 0.5; shadow.Color = Color3.fromRGB(0, 255, 255); shadow.Material = "Neon"
+                    shadow.Size = ball.Size; shadow.Parent = workspace
                 end
-                
-                -- On crée une interpolation fluide et lente pour ton écran
-                local targetPos = ball.Position
-                shadowBall.CFrame = shadowBall.CFrame:Lerp(CFrame.new(targetPos), 0.15) -- 0.15 = ralentissement
-                
-                -- On rend la vraie balle invisible pour ne voir que la lente
-                ball.LocalTransparencyModifier = 1
+                shadow.CFrame = shadow.CFrame:Lerp(ball.CFrame, 0.1) -- Interpolation lente
+                ball.LocalTransparencyModifier = 0.8 -- Rend la vraie balle presque invisible
             else
-                local shadow = workspace:FindFirstChild("SlowMoVisual")
-                if shadow then shadow:Destroy() end
+                if workspace:FindFirstChild("SlowMoVisual") then workspace.SlowMoVisual:Destroy() end
                 ball.LocalTransparencyModifier = 0
             end
         end
@@ -284,14 +247,24 @@ end)
 
 -- Écoute des touches (Parry + Boost si activé)
 UIS.InputBegan:Connect(function(i, p)
-    if not p then
-        local keyToDetect = Enum.KeyCode[Functions.ParryKey]
-        if i.KeyCode == keyToDetect then 
-            Functions.RemoteParry() 
-            if Functions.BallBoost then 
-                Functions.ApplyBallBoost() 
-            end
+    if p then return end
+    if i.KeyCode == Enum.KeyCode[Functions.ParryKey] then
+        -- Blade Ball Parry
+        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Parry", true)
+        if remote then remote:FireServer() end
+        
+        -- Apply Boost if active
+        if Functions.BallBoost then
+            local ball = GetBall()
+            if ball then ball.AssemblyLinearVelocity *= Functions.BoostMultiplier end
         end
+    end
+end)
+
+UIS.JumpRequest:Connect(function()
+    if Functions.InfJump then
+        local hum = GetHum()
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
 end)
 
