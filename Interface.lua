@@ -3,7 +3,7 @@ local UI = {}
 function UI.Init(Lib)
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     local Window = Rayfield:CreateWindow({
-        Name = "🌐 UNIVERSAL HUB v6",
+        Name = "🌐 UNIVERSAL HUB v6.2",
         LoadingTitle = "Initialisation du Multi-Tool...",
         LoadingSubtitle = "par YuumaBoyz",
         ConfigurationSaving = {
@@ -15,6 +15,8 @@ function UI.Init(Lib)
 
     -- [[ 🏃 ONGLET MOUVEMENT ]] --
     local TabMove = Window:CreateTab("🏃 Mouvement")
+
+    TabMove:CreateSection("Vitesse & Capacités")
 
     TabMove:CreateSlider({
         Name = "Vitesse de marche",
@@ -42,6 +44,18 @@ function UI.Init(Lib)
         Callback = function(v) Lib.InfJump = v end,
     })
 
+    TabMove:CreateSection("Téléportation (Waypoints)")
+
+    TabMove:CreateButton({
+        Name = "📍 Poser un Point de TP",
+        Callback = function() Lib.SetTPPoint() end,
+    })
+
+    TabMove:CreateButton({
+        Name = "🌀 Se téléporter au Point",
+        Callback = function() Lib.GoToTPPoint() end,
+    })
+
     -- [[ 👁️ ONGLET VISUELS ]] --
     local TabVisual = Window:CreateTab("👁️ Visuels")
     
@@ -53,7 +67,6 @@ function UI.Init(Lib)
             Lighting.ClockTime = 14
             Lighting.FogEnd = 999999
             Lighting.GlobalShadows = false
-            print("☀️ Luminosité activée !")
         end,
     })
 
@@ -85,17 +98,29 @@ function UI.Init(Lib)
         Callback = function(Value) Lib.ChangeSize(Value) end,
     })
 
+    -- [[ 💞 ONGLET SOCIAL ]] --
+    local TabSocial = Window:CreateTab("💞 Social")
+
+    TabSocial:CreateToggle({
+        Name = "Regard Auto (Look At Player)",
+        CurrentValue = false,
+        Callback = function(v) Lib.ToggleLookAt(v) end,
+    })
+
+    TabSocial:CreateButton({
+        Name = "Activer Chat Spy (Console F9)",
+        Callback = function() Lib.ChatSpy() end,
+    })
+
     -- [[ 🔓 ONGLET UNLOCKS ]] --
     local TabUnlock = Window:CreateTab("🔓 Unlocks")
 
-    TabUnlock:CreateSection("Bypass de Sécurité")
+    TabUnlock:CreateSection("Bypass & Exploits")
 
     TabUnlock:CreateButton({
         Name = "Supprimer Kill/VIP Parts (Bypass)",
         Callback = function() Lib.BypassTouch() end,
     })
-
-    TabUnlock:CreateSection("Items & Give")
 
     TabUnlock:CreateButton({
         Name = "Tenter Give VIP Tools (Remotes)",

@@ -6,6 +6,7 @@ Functions.JumpPower = 50
 Functions.Flying = false
 Functions.Noclip = false
 Functions.InfJump = false
+Functions.SavedPosition = nil
 
 local LP = game:GetService("Players").LocalPlayer
 local NoclipConnection = nil
@@ -106,6 +107,34 @@ function Functions.GetRemoteTools()
         end
     end
     print("🎁 Tentative de récupération d'items envoyée !")
+end
+
+function Functions.SetTPPoint()
+    local Char = LP.Character
+    if Char and Char:FindFirstChild("HumanoidRootPart") then
+        Functions.SavedPosition = Char.HumanoidRootPart.CFrame
+        print("📍 Position enregistrée avec succès !")
+        -- Petit feedback visuel (optionnel)
+        Rayfield:Notify({
+            Title = "Point de TP",
+            Content = "Position actuelle sauvegardée !",
+            Duration = 2,
+            Image = 4483362458,
+        })
+    end
+end
+
+-- Revenir au point enregistré
+function Functions.GoToTPPoint()
+    local Char = LP.Character
+    if Char and Char:FindFirstChild("HumanoidRootPart") then
+        if Functions.SavedPosition then
+            Char.HumanoidRootPart.CFrame = Functions.SavedPosition
+            print("🚀 Téléportation effectuée !")
+        else
+            warn("❌ Aucun point de TP enregistré !")
+        end
+    end
 end
 
 function Functions.ChangeSize(modifier)
